@@ -1,0 +1,294 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chờ Thanh Toán | TicketBooking - Nhóm 7</title>
+    <!-- Font Outfit từ Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700&display=swap" rel="stylesheet">
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <style>
+        :root {
+            --bg-primary: #0b0f19;
+            --bg-secondary: #161f30;
+            --glass-bg: rgba(22, 31, 48, 0.75);
+            --glass-border: rgba(255, 255, 255, 0.08);
+            --color-primary: #e50914;
+            --color-primary-hover: #ff2e3b;
+            --color-accent: #ff9f43;
+            --text-main: #f5f6fa;
+            --text-muted: #a0aec0;
+            --space-xl: 2rem;
+            --space-lg: 1.5rem;
+            --space-md: 1rem;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Outfit', sans-serif;
+            background-color: var(--bg-primary);
+            color: var(--text-main);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow-x: hidden;
+            background: radial-gradient(circle at top right, rgba(229, 9, 20, 0.1), transparent),
+                        radial-gradient(circle at bottom left, rgba(22, 31, 48, 1), var(--bg-primary));
+        }
+
+        /* Hiệu ứng nền mờ phía sau */
+        .backdrop-blur {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: url('https://image.tmdb.org/t/p/original/m9Y9S7KC983ST9pSfy96SpsS46G.jpg') center/cover;
+            filter: blur(40px) brightness(0.3);
+            z-index: -1;
+        }
+
+        .payment-container {
+            width: 100%;
+            max-width: 500px;
+            padding: var(--space-md);
+            animation: slideUp 0.6s ease-out;
+        }
+
+        @keyframes slideUp {
+            from { opacity: 0; transform: translateY(30px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .glass-card {
+            background: var(--glass-bg);
+            backdrop-filter: blur(15px);
+            border: 1px solid var(--glass-border);
+            border-radius: 24px;
+            padding: var(--space-xl);
+            box-shadow: 0 10px 50px rgba(0, 0, 0, 0.5);
+            text-align: center;
+        }
+
+        .status-icon {
+            font-size: 4rem;
+            color: var(--color-accent);
+            margin-bottom: var(--space-md);
+            filter: drop-shadow(0 0 10px rgba(255, 159, 67, 0.4));
+        }
+
+        .title {
+            font-size: 1.75rem;
+            font-weight: 700;
+            margin-bottom: var(--space-sm);
+        }
+
+        .subtitle {
+            color: var(--text-muted);
+            font-size: 0.95rem;
+            margin-bottom: var(--space-xl);
+        }
+
+        /* Đồng hồ đếm ngược */
+        .timer-wrapper {
+            background: rgba(0, 0, 0, 0.2);
+            border-radius: 16px;
+            padding: var(--space-lg);
+            margin-bottom: var(--space-xl);
+            border: 1px dashed var(--glass-border);
+        }
+
+        .timer-label {
+            font-size: 0.85rem;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            color: var(--text-muted);
+            margin-bottom: var(--space-sm);
+        }
+
+        .timer-countdown {
+            font-size: 3.5rem;
+            font-weight: 700;
+            color: var(--color-primary);
+            font-variant-numeric: tabular-nums;
+            text-shadow: 0 0 20px rgba(229, 9, 20, 0.3);
+        }
+
+        /* Chi tiết đơn hàng */
+        .order-info {
+            text-align: left;
+            background: rgba(255, 255, 255, 0.03);
+            border-radius: 12px;
+            padding: var(--space-md);
+            margin-bottom: var(--space-xl);
+        }
+
+        .info-row {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: var(--space-sm);
+        }
+
+        .info-row:last-child { margin-bottom: 0; }
+
+        .info-label { color: var(--text-muted); }
+        .info-value { font-weight: 600; }
+        .info-value.price { color: var(--color-accent); font-size: 1.15rem; }
+
+        /* Nút bấm */
+        .btn {
+            display: block;
+            width: 100%;
+            padding: 1rem;
+            border-radius: 12px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            border: none;
+            text-decoration: none;
+            margin-bottom: var(--space-md);
+        }
+
+        .btn-primary {
+            background: var(--color-primary);
+            color: white;
+            box-shadow: 0 0 20px rgba(229, 9, 20, 0.4);
+        }
+
+        .btn-primary:hover {
+            background: var(--color-primary-hover);
+            transform: translateY(-2px);
+            box-shadow: 0 0 30px rgba(229, 9, 20, 0.6);
+        }
+
+        .btn-outline {
+            background: transparent;
+            border: 1px solid var(--glass-border);
+            color: var(--text-muted);
+        }
+
+        .btn-outline:hover {
+            background: rgba(255, 255, 255, 0.05);
+            color: var(--text-main);
+        }
+
+        .footer-note {
+            font-size: 0.8rem;
+            color: var(--text-muted);
+            margin-top: var(--space-md);
+        }
+
+        /* Responsive */
+        @media (max-width: 480px) {
+            .glass-card { padding: var(--space-lg); }
+            .timer-countdown { font-size: 2.5rem; }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="backdrop-blur"></div>
+
+    <div class="payment-container">
+        <div class="glass-card">
+            <div class="status-icon">
+                <i class="fa-solid fa-hourglass-half fa-spin-pulse"></i>
+            </div>
+            
+            <h1 class="title">Đang giữ ghế cho bạn</h1>
+            <p class="subtitle">Đơn đặt vé đã được tạo thành công. Vui lòng thanh toán để xác nhận vé.</p>
+
+            <div class="timer-wrapper">
+                <p class="timer-label">Thời gian còn lại</p>
+                <div class="timer-countdown" id="countdown">05:00</div>
+            </div>
+
+            <div class="order-info">
+                <div class="info-row">
+                    <span class="info-label">Mã đơn hàng</span>
+                    <span class="info-value" id="order-id">#DON123456789</span>
+                </div>
+                <div class="info-row">
+                    <span class="info-label">Suất chiếu</span>
+                    <span class="info-value">Lật Mặt 7 - 19:30</span>
+                </div>
+                <div class="info-row">
+                    <span class="info-label">Tổng cộng</span>
+                    <span class="info-value price" id="total-price">250.000đ</span>
+                </div>
+            </div>
+
+            <button class="btn btn-primary" onclick="processPayment()">
+                <i class="fa-solid fa-credit-card"></i> Thanh Toán Ngay
+            </button>
+
+            <button class="btn btn-outline" onclick="cancelBooking()">
+                Hủy giao dịch
+            </button>
+
+            <p class="footer-note">
+                <i class="fa-solid fa-circle-info"></i> Sau thời gian này, ghế sẽ được giải phóng cho người khác.
+            </p>
+        </div>
+    </div>
+
+    <script>
+        // Thời gian hết hạn mẫu (5 phút từ bây giờ)
+        let timeLeft = 300; 
+        const countdownElement = document.getElementById('countdown');
+
+        const timer = setInterval(() => {
+            const minutes = Math.floor(timeLeft / 60);
+            const seconds = timeLeft % 60;
+
+            countdownElement.textContent = `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+
+            if (timeLeft <= 0) {
+                clearInterval(timer);
+                alert('Hết thời gian giữ vé! Bạn sẽ được đưa về trang chủ.');
+                window.location.href = '/';
+            }
+            timeLeft--;
+        }, 1000);
+
+        async function processPayment() {
+            // Logic xử lý:
+            // 1. Lấy mã đơn hàng từ query string hoặc state
+            const orderId = "DON123456789"; 
+            const paymentMethod = "vnpay"; // Giá trị mặc định
+
+            console.log("Đang tạo URL thanh toán cho đơn:", orderId);
+            
+            // Giả lập gọi API: POST /api/payments/create-url
+            /*
+            const response = await fetch('/api/payments/create-url', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ maDonDatVe: orderId, paymentMethod: paymentMethod })
+            });
+            const result = await response.json();
+            if(result.status === 'success') {
+                window.location.href = result.data.paymentUrl;
+            }
+            */
+            alert("Hệ thống sẽ chuyển hướng bạn đến cổng thanh toán...");
+        }
+
+        function cancelBooking() {
+            if(confirm("Bạn có chắc muốn hủy đơn hàng này? Ghế sẽ bị mất.")) {
+                // Gọi API hủy đơn nếu cần
+                window.location.href = '/';
+            }
+        }
+    </script>
+</body>
+</html>
