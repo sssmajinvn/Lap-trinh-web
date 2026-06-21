@@ -1,0 +1,233 @@
+@{
+    var movieId = ViewData["MovieId"] as string;
+    ViewData["Title"] = "Chọn suất chiếu";
+}
+
+<div class="container" style="padding: var(--space-xl) var(--space-md); min-height: 80vh;">
+    <!-- 🎬 MOVIE TITLE HEADER -->
+    <div style="margin-bottom: var(--space-xl); text-align: center;">
+        <h1 style="font-size: 2.2rem; margin-bottom: 4px;" id="booking-movie-title">Đang tải phim...</h1>
+        <p style="color: var(--text-muted); font-size: 0.95rem;">Vui lòng chọn ngày chiếu và suất chiếu phù hợp bên dưới để đặt vé.</p>
+    </div>
+
+    <!-- 📅 DATE SELECTOR (7 Days Horizontal Scroll) -->
+    <div style="margin-bottom: var(--space-xl);">
+        <h3 style="font-size: 1.1rem; margin-bottom: 12px; color: var(--text-light);"><i class="fa-regular fa-calendar-days text-primary"></i> Chọn ngày xem:</h3>
+        <div class="date-selector-scroll" id="days-container">
+            <!-- Dynamically populated next 7 days -->
+        </div>
+    </div>
+
+    <!-- 🎬 THEATER GROUPED SHOWTIMES -->
+    <div>
+        <h3 style="font-size: 1.1rem; margin-bottom: 16px; color: var(--text-light);"><i class="fa-solid fa-clock text-primary"></i> Lịch chiếu theo rạp:</h3>
+        <div id="showtimes-by-theater-container">
+            <!-- Dynamically loaded grouped showtimes -->
+            <div style="text-align: center; padding: var(--space-xl) 0; color: var(--text-muted); background: var(--glass-bg); border: 1px solid var(--glass-border); border-radius: var(--radius-md);">
+                <i class="fa-solid fa-spinner fa-spin fa-2x" style="margin-bottom: 10px;"></i>
+                <p>Đang tải danh sách lịch chiếu...</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        const movieId = "@movieId";
+        let selectedDateStr = ""; // yyyy-MM-dd
+
+        document.addEventListener('DOMContentLoaded', function() {
+            loadMovieTitle();
+            generateDaysList();
+        });
+
+        // 1. Lấy thông tin tiêu đề phim
+        async function loadMovieTitle() {
+            try {
+                const response = await fetch(`/api/movies/${movieId}`);
+                const result = await response.json();
+                if (response.ok && result.status === 'success') {
+                    document.getElementById('booking-movie-title').textContent = "Đặt Vé: " + result.data.tenphim;
+                }
+            } catch (err) {
+                console.error(err);
+            }
+        }
+
+        // 2. Sinh tự động 7 ngày tiếp theo tính từ ngày hiện tại
+        function generateDaysList() {
+            const container = document.getElementById('days-container');
+            container.innerHTML = '';
+            
+            const daysOfWeek = ['Chủ Nhật', 'Thứ 2', 'Thứ 3', 'Thứ 4', 'Thứ 5', 'Thứ 6', 'Thứ 7'];
+            const today = new Date();
+            
+            for (let i = 0; i < 7; i++) {
+                const d = new Date();
+                d.setDate(today.getDate() + i);
+                
+                const dayNum = d.getDate();
+                const dayName = i === 0 ? 'Hôm nay' : daysOfWeek[d.getDay()];
+                
+                // Format yyyy-MM-dd
+                const year = d.getFullYear();
+                const month = String(d.getMonth() + 1).padStart(2, '0');
+                const dateVal = String(dayNum).padStart(2, '0');
+                const dateStr = `${year}-${month}-${dateVal}`;
+                
+                const activeClass = i === 0 ? 'active' : '';
+                if (i === 0) {
+                    selectedDateStr = dateStr;
+                }
+                
+                const dayHtml = `
+                    <div class="date-item ${activeClass}" data-date="${dateStr}" onclick="selectDate(event, '${dateStr}')">
+                        <span class="date-item-day">${dayName}</span>
+                        <span class="date-item-num">${dayNum}</span>
+                    </div>
+                `;
+                container.innerHTML += dayHtml;
+            }
+            
+            loadShowtimes();
+        }
+
+        // Chọn ngày mới
+        function selectDate(event, dateStr) {
+            const items = document.querySelectorAll('.date-item');
+            items.forEach(item => item.classList.remove('active'));
+            
+            event.currentTarget.classList.add('active');
+            selectedDateStr = dateStr;
+            
+            loadShowtimes();
+        }
+
+        // 3. Tải danh sách suất chiếu
+        async function loadShowtimes() {
+            const container = document.getElementById('showtimes-by-theater-container');
+            container.innerHTML = `
+                <div style="text-align: center; padding: var(--space-xl) 0; color: var(--text-muted); background: var(--glass-bg); border: 1px solid var(--glass-border); border-radius: var(--radius-md);">
+                    <i class="fa-solid fa-spinner fa-spin fa-2x" style="margin-bottom: 10px;"></i>
+                    <p>Đang tải danh sách lịch chiếu...</p>
+                </div>`;
+                
+            try {
+                // Gọi API lấy lịch chiếu cho bộ phim, ngày cụ thể
+                const response = await fetch(`/api/bookings/showtimes?movieId=${movieId}&date=${selectedDateStr}`);
+                const result = await response.json();
+                
+                if (response.ok && result.status === 'success') {
+                    const showtimes = result.data;
+                    groupAndRenderShowtimes(showtimes, container);
+                } else {
+                    container.innerHTML = `
+                        <div style="text-align: center; padding: 2rem; color: var(--color-primary); background: var(--glass-bg); border: 1px solid var(--glass-border); border-radius: var(--radius-md);">
+                            <i class="fa-solid fa-triangle-exclamation fa-2x" style="margin-bottom: 10px;"></i>
+                            <p>Không thể tải suất chiếu. Vui lòng kiểm tra kết nối API.</p>
+                        </div>`;
+                }
+            } catch (err) {
+                console.error(err);
+                container.innerHTML = `
+                    <div style="text-align: center; padding: 2rem; color: var(--color-primary); background: var(--glass-bg); border: 1px solid var(--glass-border); border-radius: var(--radius-md);">
+                        <i class="fa-solid fa-triangle-exclamation fa-2x" style="margin-bottom: 10px;"></i>
+                        <p>Lỗi kết nối máy chủ.</p>
+                    </div>`;
+            }
+        }
+
+        function groupAndRenderShowtimes(showtimes, container) {
+            container.innerHTML = '';
+            
+            if (showtimes.length === 0) {
+                container.innerHTML = `
+                    <div style="text-align: center; padding: 3rem 0; color: var(--text-muted); background: var(--glass-bg); border: 1px solid var(--glass-border); border-radius: var(--radius-md);">
+                        <i class="fa-solid fa-calendar-xmark fa-3x" style="margin-bottom: 15px; opacity:0.4;"></i>
+                        <p style="font-size: 1.1rem; font-weight: 500;">Rất tiếc, bộ phim hiện không có suất chiếu nào vào ngày đã chọn!</p>
+                        <p style="font-size: 0.9rem; margin-top: 4px;">Vui lòng chọn một ngày khác trên lịch.</p>
+                    </div>`;
+                return;
+            }
+            
+            // Nhóm suất chiếu theo rạp (rap)
+            const grouped = {};
+            showtimes.forEach(st => {
+                const rapName = st.rap || "Rạp Phim Ticket Cinema";
+                if (!grouped[rapName]) {
+                    grouped[rapName] = [];
+                }
+                grouped[rapName].push(st);
+            });
+            
+            // Kiểm tra suất chiếu đã qua giờ chưa (nếu ngày chiếu là hôm nay)
+            const now = new Date();
+            const todayStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
+            
+            Object.keys(grouped).forEach(rapName => {
+                const items = grouped[rapName];
+                
+                let showtimesHtml = '';
+                items.forEach(st => {
+                    // Kiểm tra xem giờ chiếu đã qua chưa
+                    let isDisabled = false;
+                    if (selectedDateStr === todayStr) {
+                        const [hours, minutes] = st.giochieu.split(':').map(Number);
+                        const showtimeDate = new Date();
+                        showtimeDate.setHours(hours, minutes, 0, 0);
+                        if (showtimeDate < now) {
+                            isDisabled = true;
+                        }
+                    }
+                    
+                    const priceFormatted = new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(st.giave);
+                    const disabledClass = isDisabled ? 'disabled' : '';
+                    const clickAction = isDisabled ? 'style="pointer-events:none;"' : `onclick="selectShowtime('${st.malichchieu}', '${st.giochieu}', '${rapName}')"`;
+                    
+                    showtimesHtml += `
+                        <div class="btn-time ${disabledClass}" ${clickAction}>
+                            <span style="font-size:1.1rem; font-weight:700;">${st.giochieu}</span>
+                            <span class="btn-time-sub">${st.phong}</span>
+                            <span style="font-size:0.75rem; color:var(--color-accent); font-weight:600; margin-top:2px;">${priceFormatted}</span>
+                        </div>
+                    `;
+                });
+                
+                const boxHtml = `
+                    <div class="theater-showtimes-box">
+                        <div class="theater-name-row">
+                            <div>
+                                <div class="theater-name"><i class="fa-solid fa-location-dot text-primary"></i> ${rapName}</div>
+                                <div class="theater-address">Hệ thống rạp chiếu Ticket Cinema toàn quốc</div>
+                            </div>
+                            <div style="font-size: 0.85rem; color: var(--text-muted); align-self: center;">
+                                <i class="fa-solid fa-circle-check" style="color:#2ed573;"></i> Phục vụ kính 3D/2D
+                            </div>
+                        </div>
+                        <div class="showtimes-grid">
+                            ${showtimesHtml}
+                        </div>
+                    </div>
+                `;
+                container.innerHTML += boxHtml;
+            });
+        }
+
+        // Nhấp chọn suất chiếu
+        function selectShowtime(showtimeId, timeStr, rapName) {
+            const token = localStorage.getItem('jwt_token');
+            
+            // Check login trước khi đặt
+            if (!token) {
+                alert('Vui lòng đăng nhập trước khi thực hiện đặt vé!');
+                openModal('login-modal');
+                return;
+            }
+            
+            // Ở luồng CSDL MVC thực tế: khi chọn suất chiếu, client sẽ được chuyển hướng sang trang chọn ghế
+            // Vì yêu cầu chỉ dừng lại ở bước "Chọn Suất chiếu: Hiển thị lịch chiếu theo rạp và thời gian"
+            // Nên chúng ta mô phỏng một thông báo xác nhận thành công sang bước chọn ghế cực kỳ xịn sò
+            alert(`Bạn đã chọn Suất chiếu lúc [${timeStr}] ngày [${selectedDateStr}] tại rạp [${rapName}].\n\nHệ thống sẽ kết nối qua SignalR Hub (seathub) để thực hiện khóa ghế và đặt chỗ ở bước tiếp theo!`);
+        }
+    </script>
+}

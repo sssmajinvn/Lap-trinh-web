@@ -1,0 +1,298 @@
+@{
+    ViewData["Title"] = "Trang chủ - Đặt vé xem phim";
+}
+
+<!-- 🎬 HERO HOT MOVIES SLIDER -->
+<section class="hero-slider-section">
+    <div id="hero-slider-container">
+        <!-- Các slide phim hot sẽ được tạo động bằng Javascript -->
+        <div style="height: 100%; display: flex; align-items: center; justify-content: center; background-color: var(--bg-secondary);">
+            <div style="text-align: center; color: var(--text-muted);">
+                <i class="fa-solid fa-spinner fa-spin" style="font-size: 2rem; margin-bottom: var(--space-sm);"></i>
+                <p>Đang tải danh sách phim hot...</p>
+            </div>
+        </div>
+    </div>
+    
+    <div class="hero-controls" id="hero-slider-controls" style="display: none;">
+        <button class="hero-btn" onclick="prevSlide()"><i class="fa-solid fa-chevron-left"></i></button>
+        <button class="hero-btn" onclick="nextSlide()"><i class="fa-solid fa-chevron-right"></i></button>
+    </div>
+</section>
+
+<!-- 🎬 MAIN MOVIE TABS SECTION -->
+<section class="container" style="padding: var(--space-xl) 0;">
+    <div class="tab-container">
+        <div class="tab-header">
+            <button class="tab-btn active" onclick="switchMovieTab(event, 'showing')">🎬 Phim Đang Chiếu</button>
+            <button class="tab-btn" onclick="switchMovieTab(event, 'coming_soon')">📅 Phim Sắp Chiếu</button>
+        </div>
+        
+        <!-- Tab Phim Đang Chiếu -->
+        <div id="showing-tab" class="tab-pane active">
+            <div class="grid-4" id="showing-movies-grid">
+                <!-- Data load via AJAX -->
+                <div style="grid-column: 1 / -1; text-align: center; padding: var(--space-xl) 0; color: var(--text-muted);">
+                    <i class="fa-solid fa-spinner fa-spin fa-2x" style="margin-bottom: 10px;"></i>
+                    <p>Đang tải danh sách phim...</p>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Tab Phim Sắp Chiếu -->
+        <div id="coming-soon-tab" class="tab-pane">
+            <div class="grid-4" id="coming-soon-movies-grid">
+                <!-- Data load via AJAX -->
+            </div>
+        </div>
+    </div>
+</section>
+
+@section Scripts {
+    <script>
+        let currentSlideIndex = 0;
+        let slideInterval = null;
+        let hotMoviesList = [];
+
+        document.addEventListener('DOMContentLoaded', function() {
+            fetchHotMovies();
+            fetchMoviesByStatus('showing');
+            fetchMoviesByStatus('coming_soon');
+        });
+
+        // 1. Fetch Phim Hot cho Slider
+        async function fetchHotMovies() {
+            try {
+                const response = await fetch('/api/movies/hot');
+                const result = await response.json();
+                
+                if (response.ok && result.status === 'success' && result.data.length > 0) {
+                    hotMoviesList = result.data;
+                    renderHeroSlider(hotMoviesList);
+                } else {
+                    // Fallback nếu không có phim nào gắn hashtag #phimhot
+                    // Lấy 3 phim đầu tiên của danh sách đang chiếu
+                    const resAll = await fetch('/api/movies');
+                    const resJson = await resAll.json();
+                    if (resJson.status === 'success' && resJson.data.length > 0) {
+                        hotMoviesList = resJson.data.slice(0, 3);
+                        renderHeroSlider(hotMoviesList);
+                    } else {
+                        document.getElementById('hero-slider-container').innerHTML = `
+                            <div class="hero-slide active" style="background-image: url('https://images.unsplash.com/photo-1489599849927-2ee91cede3ba?w=1600&auto=format&fit=crop&q=80')">
+                                <div class="hero-content">
+                                    <span class="hero-tag">Chào mừng</span>
+                                    <h1 class="hero-title">Chào Mừng Bạn Đến Với Ticket Cinema</h1>
+                                    <p class="hero-desc">Hệ thống đặt vé trực tuyến cao cấp. Đăng nhập để nhận ngay ưu đãi thành viên cực khủng!</p>
+                                    <div style="display:flex; gap:12px;">
+                                        <button class="btn btn-primary" onclick="openModal('login-modal')">Đăng Nhập Ngay</button>
+                                        <a href="/Home/Search" class="btn btn-secondary">Tìm Phim</a>
+                                    </div>
+                                </div>
+                            </div>`;
+                    }
+                }
+            } catch (err) {
+                console.error('Lỗi fetch phim hot:', err);
+                document.getElementById('hero-slider-container').innerHTML = `
+                    <div style="text-align: center; padding: 4rem; color: var(--color-primary);">
+                        <i class="fa-solid fa-triangle-exclamation fa-3x" style="margin-bottom: var(--space-md);"></i>
+                        <p>Không thể kết nối API phim. Vui lòng kiểm tra lại server.</p>
+                    </div>`;
+            }
+        }
+
+        function renderHeroSlider(movies) {
+            const container = document.getElementById('hero-slider-container');
+            container.innerHTML = '';
+            
+            movies.forEach((movie, index) => {
+                const activeClass = index === 0 ? 'active' : '';
+                const bgImage = movie.posterUrl || 'https://images.unsplash.com/photo-1489599849927-2ee91cede3ba?w=1600&auto=format&fit=crop&q=80';
+                
+                // Format giới hạn tuổi
+                let ageBadge = 'P';
+                let ageClass = 'age-g';
+                if (movie.gioihantuoi) {
+                    ageBadge = `T${movie.gioihantuoi}`;
+                    if (movie.gioihantuoi >= 18) ageClass = 'age-pg18';
+                    else if (movie.gioihantuoi >= 16) ageClass = 'age-pg16';
+                    else if (movie.gioihantuoi >= 13) ageClass = 'age-pg13';
+                }
+                
+                const genresText = movie.genres && movie.genres.length > 0 ? movie.genres.join(', ') : 'Đang cập nhật';
+
+                const slideHtml = `
+                    <div class="hero-slide ${activeClass}" style="background-image: url('${bgImage}')">
+                        <div class="hero-content">
+                            <span class="hero-tag">🔥 Phim Bán Chạy</span>
+                            <h1 class="hero-title">${movie.tenphim}</h1>
+                            <div style="display: flex; gap: var(--space-md); align-items: center; font-size: 0.9rem; color: var(--text-muted); flex-wrap: wrap;">
+                                <span class="movie-age-badge ${ageClass}" style="position: static;">${ageBadge}</span>
+                                <span><i class="fa-regular fa-clock"></i> ${movie.thoiluong || '120'} phút</span>
+                                <span><i class="fa-solid fa-tags"></i> ${genresText}</span>
+                            </div>
+                            <p class="hero-desc">${movie.mota || 'Không có mô tả chi tiết cho phim này.'}</p>
+                            <div style="display: flex; gap: var(--space-md); margin-top: var(--space-sm);">
+                                <a href="/Home/Booking?movieId=${movie.maphim}" class="btn btn-primary"><i class="fa-solid fa-ticket"></i> Đặt Vé Ngay</a>
+                                <a href="/Home/Details/${movie.maphim}" class="btn btn-secondary">Xem Chi Tiết</a>
+                            </div>
+                        </div>
+                    </div>
+                `;
+                container.innerHTML += slideHtml;
+            });
+            
+            document.getElementById('hero-slider-controls').style.display = 'flex';
+            startSlideShow();
+        }
+
+        // Slider Autoplay controls
+        function startSlideShow() {
+            stopSlideShow();
+            slideInterval = setInterval(nextSlide, 6000);
+        }
+        
+        function stopSlideShow() {
+            if (slideInterval) clearInterval(slideInterval);
+        }
+
+        function showSlide(index) {
+            const slides = document.querySelectorAll('.hero-slide');
+            if (slides.length === 0) return;
+            
+            slides[currentSlideIndex].classList.remove('active');
+            
+            currentSlideIndex = (index + slides.length) % slides.length;
+            
+            slides[currentSlideIndex].classList.add('active');
+        }
+
+        function nextSlide() {
+            showSlide(currentSlideIndex + 1);
+        }
+
+        function prevSlide() {
+            showSlide(currentSlideIndex - 1);
+        }
+
+        // 2. Tabs Switch
+        function switchMovieTab(event, status) {
+            // Active tab button
+            const buttons = document.querySelectorAll('.tab-btn');
+            buttons.forEach(btn => btn.classList.remove('active'));
+            event.currentTarget.classList.add('active');
+            
+            // Active tab content
+            const panes = document.querySelectorAll('.tab-pane');
+            panes.forEach(pane => pane.classList.remove('active'));
+            
+            if (status === 'showing') {
+                document.getElementById('showing-tab').classList.add('active');
+            } else {
+                document.getElementById('coming-soon-tab').classList.add('active');
+            }
+        }
+
+        // 3. Fetch Phim theo trạng thái (đang chiếu / sắp chiếu)
+        async function fetchMoviesByStatus(status) {
+            const gridId = status === 'showing' ? 'showing-movies-grid' : 'coming-soon-movies-grid';
+            const gridEl = document.getElementById(gridId);
+            
+            // Map status của CSDL: "showing" & "now_showing" -> đang chiếu, "coming_soon" -> sắp chiếu
+            // Đầu tiên fetch danh sách phim
+            try {
+                let apiUrl = '/api/movies';
+                // Để lấy đúng trạng thái, nếu 'showing' thì API lọc status, CSDL có thể là 'showing' hoặc 'now_showing'
+                // Nhưng API của chúng ta cho phép gửi query ?status
+                // Gọi API
+                const response = await fetch(apiUrl);
+                const result = await response.json();
+                
+                if (response.ok && result.status === 'success') {
+                    let filteredMovies = [];
+                    if (status === 'showing') {
+                        // Lấy các phim có trạng thái showing hoặc now_showing
+                        filteredMovies = result.data.filter(m => m.trangthai === 'showing' || m.trangthai === 'now_showing');
+                    } else {
+                        // Lấy các phim có trạng thái coming_soon
+                        filteredMovies = result.data.filter(m => m.trangthai === 'coming_soon');
+                    }
+                    
+                    renderMoviesGrid(filteredMovies, gridEl, status);
+                } else {
+                    gridEl.innerHTML = `<div style="grid-column: 1/-1; text-align:center; padding:2rem; color:var(--color-primary)">Lỗi tải dữ liệu từ máy chủ.</div>`;
+                }
+            } catch (err) {
+                console.error(err);
+                gridEl.innerHTML = `<div style="grid-column: 1/-1; text-align:center; padding:2rem; color:var(--color-primary)">Lỗi kết nối CSDL API.</div>`;
+            }
+        }
+
+        function renderMoviesGrid(movies, containerEl, status) {
+            containerEl.innerHTML = '';
+            
+            if (movies.length === 0) {
+                containerEl.innerHTML = `
+                    <div style="grid-column: 1 / -1; text-align: center; padding: var(--space-xl) 0; color: var(--text-muted);">
+                        <i class="fa-solid fa-film fa-2x" style="margin-bottom: 10px; opacity:0.5;"></i>
+                        <p>Hiện tại không có bộ phim nào ở danh sách này.</p>
+                    </div>
+                `;
+                return;
+            }
+            
+            movies.forEach(movie => {
+                const poster = movie.posterUrl || 'https://images.unsplash.com/photo-1536440136628-849c177e76a1?w=500&auto=format&fit=crop&q=60';
+                
+                // Giới hạn tuổi
+                let ageBadge = 'P';
+                let ageClass = 'age-g';
+                if (movie.gioihantuoi) {
+                    ageBadge = `T${movie.gioihantuoi}`;
+                    if (movie.gioihantuoi >= 18) ageClass = 'age-pg18';
+                    else if (movie.gioihantuoi >= 16) ageClass = 'age-pg16';
+                    else if (movie.gioihantuoi >= 13) ageClass = 'age-pg13';
+                }
+
+                // Nút hành động khác nhau cho phim đang chiếu và sắp chiếu
+                let actionBtnHtml = '';
+                if (status === 'showing') {
+                    actionBtnHtml = `<a href="/Home/Booking?movieId=${movie.maphim}" class="btn btn-primary btn-block text-center mt-2"><i class="fa-solid fa-ticket"></i> Đặt Vé</a>`;
+                } else {
+                    actionBtnHtml = `<a href="/Home/Details/${movie.maphim}" class="btn btn-secondary btn-block text-center mt-2"><i class="fa-solid fa-circle-info"></i> Xem Chi Tiết</a>`;
+                }
+                
+                // Genres tags
+                let genresHtml = '';
+                if (movie.genres && movie.genres.length > 0) {
+                    // Hiển thị tối đa 2 thể loại
+                    movie.genres.slice(0, 2).forEach(g => {
+                        genresHtml += `<span class="badge-hashtag">#${g.toLowerCase().replace(/\s+/g, '')}</span>`;
+                    });
+                }
+
+                const cardHtml = `
+                    <div class="movie-card">
+                        <div class="movie-poster-wrapper">
+                            <img src="${poster}" alt="${movie.tenphim}" class="movie-poster" loading="lazy">
+                            <span class="movie-age-badge ${ageClass}">${ageBadge}</span>
+                        </div>
+                        <div class="movie-info">
+                            <h3 class="movie-title">${movie.tenphim}</h3>
+                            <div class="movie-meta">
+                                <span><i class="fa-regular fa-clock"></i> ${movie.thoiluong || '120'} phút</span>
+                                <span class="movie-rating"><i class="fa-solid fa-star"></i> 9.0</span>
+                            </div>
+                            <div class="movie-hashtags">
+                                ${genresHtml}
+                            </div>
+                            ${actionBtnHtml}
+                        </div>
+                    </div>
+                `;
+                containerEl.innerHTML += cardHtml;
+            });
+        }
+    </script>
+}

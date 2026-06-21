@@ -90,7 +90,7 @@ builder.Services.AddCors(options =>
 });
 
 // ── Controllers + Swagger ──────────────────────────────────────
-builder.Services.AddControllers()
+builder.Services.AddControllersWithViews()
     .AddJsonOptions(options =>
     {
         options.JsonSerializerOptions.ReferenceHandler = System.Text.Json.Serialization.ReferenceHandler.IgnoreCycles;
@@ -135,15 +135,29 @@ app.UseSwagger();
 app.UseSwaggerUI(c =>
 {
     c.SwaggerEndpoint("/swagger/v1/swagger.json", "Ticket Booking API v1");
-    c.RoutePrefix = string.Empty; // Swagger tại root: https://localhost:{port}/
+    c.RoutePrefix = "swagger"; // Swagger tại: https://localhost:{port}/swagger
 });
 
 // app.UseHttpsRedirection(); // Tắt khi chạy sau ngrok (tránh 307 redirect loop)
+// Redirect /index.html → / (IIS Express tự thêm index.html vào URL, cần redirect về trang chủ MVC)
+app.Use(async (context, next) =>
+{
+    if (context.Request.Path.Value?.ToLower() == "/index.html")
+    {
+        context.Response.Redirect("/");
+        return;
+    }
+    await next();
+});
+app.UseStaticFiles();
 app.UseCors("AllowAll");
 app.UseAuthentication();
 app.UseAuthorization();
 
 app.MapControllers();
+app.MapControllerRoute(
+    name: "default",
+    pattern: "{controller=Home}/{action=Index}/{id?}");
 app.MapHub<SeatHub>("/seathub");
 app.MapHub<NotificationHub>("/notificationhub");
 
