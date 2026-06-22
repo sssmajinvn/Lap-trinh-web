@@ -70,9 +70,15 @@ builder.Services.AddAuthentication(options =>
     };
 });
 
+builder.Services.AddAuthorization(options =>
+{
+    options.AddPolicy("RequireAdmin", policy => policy.RequireClaim("admin", "true"));
+});
+
 // ── Services ───────────────────────────────────────────────────
 builder.Services.AddHttpClient();
 builder.Services.AddScoped<IVNPayService, VNPayService>();
+builder.Services.AddScoped<ITmdbService, TmdbService>();
 builder.Services.AddScoped<IMoMoService, MoMoService>();
 builder.Services.AddScoped<INotificationService, NotificationService>();
 builder.Services.AddScoped<IVoucherService, VoucherService>();
