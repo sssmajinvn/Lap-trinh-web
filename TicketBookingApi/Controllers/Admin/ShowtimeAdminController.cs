@@ -28,7 +28,10 @@ namespace TicketBookingApi.Controllers.Admin
                     s.Gioketthuc,
                     s.Giave,
                     s.Maphim,
-                    s.Maphong
+                    s.Maphong,
+                    tenphim = s.MaphimNavigation != null ? s.MaphimNavigation.Tenphim : "",
+                    tenphong = s.MaphongNavigation != null ? s.MaphongNavigation.Tenphong : "",
+                    tenrapphim = (s.MaphongNavigation != null && s.MaphongNavigation.MarapphimNavigation != null) ? s.MaphongNavigation.MarapphimNavigation.Tenrapphim : ""
                 })
                 .ToListAsync();
             return Ok(new { status = "success", data = showtimes });

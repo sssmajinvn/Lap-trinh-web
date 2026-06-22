@@ -1,0 +1,513 @@
+@{
+    Layout = "_AdminLayout";
+    ViewData["Title"] = "Quản Lý Lịch Chiếu";
+}
+
+<!-- 📅 Showtimes Page Header Actions -->
+<div class="data-card" style="margin-bottom: 2rem;">
+    <div class="card-header-actions">
+        <h3 class="card-title">Danh sách lịch chiếu</h3>
+        <button class="btn btn-primary" onclick="openModal('add-showtime-modal')">
+            <i class="fa-solid fa-plus" style="margin-right: 6px;"></i> Thêm Lịch Chiếu
+        </button>
+    </div>
+
+    <!-- Filter / Search Bar -->
+    <div class="table-filter-bar">
+        <div class="filter-group">
+            <div class="search-input-wrapper">
+                <i class="fa-solid fa-magnifying-glass"></i>
+                <input type="text" id="showtime-search-input" class="form-input" placeholder="Tìm tên phim hoặc phòng..." oninput="filterShowtimes()">
+            </div>
+            <select id="showtime-date-filter" class="form-select" onchange="filterShowtimes()" style="max-width: 200px;">
+                <option value="">Tất cả ngày</option>
+                <!-- Populated dynamically -->
+            </select>
+        </div>
+    </div>
+
+    <!-- Table -->
+    <div class="admin-table-wrapper">
+        <table class="admin-table">
+            <thead>
+                <tr>
+                    <th>Phim</th>
+                    <th>Ngày Chiếu</th>
+                    <th>Giờ Bắt Đầu</th>
+                    <th>Giờ Kết Thúc</th>
+                    <th>Phòng &amp; Rạp</th>
+                    <th>Giá Vé</th>
+                    <th style="text-align: right;">Hành Động</th>
+                </tr>
+            </thead>
+            <tbody id="showtimes-tbody">
+                <tr>
+                    <td colspan="7" style="text-align: center; color: var(--text-muted); padding: 2rem;">
+                        <i class="fa-solid fa-spinner fa-spin" style="margin-right: 8px;"></i>Đang tải lịch chiếu...
+                    </td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<!-- ➕ MODAL THÊM LỊCH CHIẾU -->
+<div id="add-showtime-modal" class="modal-backdrop" onclick="closeModalOnBackdrop(event, 'add-showtime-modal')">
+    <div class="modal-card admin-modal-card">
+        <div class="modal-header">
+            <h3>Thêm Lịch Chiếu Mới</h3>
+            <button class="modal-close-btn" onclick="closeModal('add-showtime-modal')">&times;</button>
+        </div>
+        <div class="modal-body">
+            <form id="add-showtime-form" onsubmit="saveNewShowtime(event)">
+
+                <div class="form-group">
+                    <label for="add-maphim">Chọn Phim</label>
+                    <select id="add-maphim" class="form-select" required>
+                        <option value="">-- Đang tải danh sách phim... --</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label for="add-maphong">Chọn Phòng Chiếu</label>
+                    <select id="add-maphong" class="form-select" required>
+                        <option value="">-- Đang tải danh sách phòng... --</option>
+                    </select>
+                </div>
+
+                <div class="form-grid-2">
+                    <div class="form-group">
+                        <label for="add-ngaychieu">Ngày Chiếu</label>
+                        <input type="date" id="add-ngaychieu" class="form-input" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="add-giave">Giá Vé (VNĐ)</label>
+                        <input type="number" id="add-giave" class="form-input" required min="10000" step="1000" placeholder="VD: 90000">
+                    </div>
+                </div>
+
+                <div class="form-grid-2">
+                    <div class="form-group">
+                        <label for="add-giochieu">Giờ Bắt Đầu</label>
+                        <input type="time" id="add-giochieu" class="form-input" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="add-gioketthuc">Giờ Kết Thúc</label>
+                        <input type="time" id="add-gioketthuc" class="form-input" required>
+                    </div>
+                </div>
+
+                <div style="display: flex; gap: 10px; justify-content: flex-end; margin-top: 1.5rem;">
+                    <button type="button" class="btn btn-secondary" onclick="closeModal('add-showtime-modal')" style="margin: 0;">Hủy</button>
+                    <button type="submit" class="btn btn-primary" style="margin: 0;">Lưu Lịch Chiếu</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- ✏️ MODAL SỬA LỊCH CHIẾU -->
+<div id="edit-showtime-modal" class="modal-backdrop" onclick="closeModalOnBackdrop(event, 'edit-showtime-modal')">
+    <div class="modal-card admin-modal-card">
+        <div class="modal-header">
+            <h3>Chỉnh Sửa Lịch Chiếu</h3>
+            <button class="modal-close-btn" onclick="closeModal('edit-showtime-modal')">&times;</button>
+        </div>
+        <div class="modal-body">
+            <form id="edit-showtime-form" onsubmit="saveShowtimeEdit(event)">
+                <input type="hidden" id="edit-malichchieu">
+
+                <div class="form-group">
+                    <label>Phim</label>
+                    <input type="text" id="edit-tenphim-readonly" class="form-input" readonly style="opacity: 0.6; cursor: not-allowed;">
+                </div>
+
+                <div class="form-group">
+                    <label for="edit-maphong-select">Phòng Chiếu</label>
+                    <select id="edit-maphong-select" class="form-select" required>
+                        <!-- Populated dynamically -->
+                    </select>
+                </div>
+
+                <div class="form-grid-2">
+                    <div class="form-group">
+                        <label for="edit-ngaychieu">Ngày Chiếu</label>
+                        <input type="date" id="edit-ngaychieu" class="form-input" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="edit-giave">Giá Vé (VNĐ)</label>
+                        <input type="number" id="edit-giave" class="form-input" required min="10000" step="1000">
+                    </div>
+                </div>
+
+                <div class="form-grid-2">
+                    <div class="form-group">
+                        <label for="edit-giochieu">Giờ Bắt Đầu</label>
+                        <input type="time" id="edit-giochieu" class="form-input" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="edit-gioketthuc">Giờ Kết Thúc</label>
+                        <input type="time" id="edit-gioketthuc" class="form-input" required>
+                    </div>
+                </div>
+
+                <div style="display: flex; gap: 10px; justify-content: flex-end; margin-top: 1.5rem;">
+                    <button type="button" class="btn btn-secondary" onclick="closeModal('edit-showtime-modal')" style="margin: 0;">Hủy</button>
+                    <button type="submit" class="btn btn-primary" style="margin: 0;">Lưu Thay Đổi</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+<script>
+    let allShowtimes = [];
+    let allMovies    = [];
+    let allRooms     = [];
+
+    document.addEventListener('DOMContentLoaded', async () => {
+        await Promise.all([loadShowtimes(), loadMovies(), loadRooms()]);
+    });
+
+    /* ===================== DATA LOADERS ===================== */
+
+    async function loadShowtimes() {
+        const token = localStorage.getItem('admin_token');
+        try {
+            const res = await fetch('/api/admin/showtimes', {
+                headers: { 'Authorization': `Bearer ${token}` }
+            });
+            const data = await res.json();
+            // Backend trả về mảng trực tiếp hoặc wrapper {status, data}
+            allShowtimes = Array.isArray(data) ? data : (data.data || []);
+            renderShowtimesTable(allShowtimes);
+            populateDateFilter(allShowtimes);
+        } catch (err) {
+            document.getElementById('showtimes-tbody').innerHTML =
+                `<tr><td colspan="7" style="text-align:center;color:#ff4757;padding:2rem;">
+                    <i class="fa-solid fa-circle-exclamation" style="margin-right:6px;"></i>
+                    Lỗi kết nối API: ${err.message}
+                </td></tr>`;
+        }
+    }
+
+    async function loadMovies() {
+        try {
+            const res = await fetch('/api/movies');
+            const data = await res.json();
+            allMovies = data.data || [];
+            populateMovieSelect('add-maphim');
+        } catch (err) {
+            console.error('Lỗi tải phim:', err);
+        }
+    }
+
+    async function loadRooms() {
+        const token = localStorage.getItem('admin_token');
+        try {
+            const res = await fetch('/api/admin/theaters/rooms', {
+                headers: { 'Authorization': `Bearer ${token}` }
+            });
+            const data = await res.json();
+            allRooms = Array.isArray(data) ? data : (data.data || []);
+            populateRoomSelect('add-maphong');
+        } catch (err) {
+            console.error('Lỗi tải phòng chiếu:', err);
+        }
+    }
+
+    /* ===================== POPULATE SELECTS ===================== */
+
+    function populateMovieSelect(selectId) {
+        const sel = document.getElementById(selectId);
+        sel.innerHTML = '<option value="">-- Chọn phim --</option>';
+        allMovies.forEach(m => {
+            const opt = document.createElement('option');
+            opt.value = m.maphim;
+            opt.textContent = m.tenphim;
+            sel.appendChild(opt);
+        });
+    }
+
+    function populateRoomSelect(selectId, selectedMaphong = '') {
+        const sel = document.getElementById(selectId);
+        sel.innerHTML = '<option value="">-- Chọn phòng chiếu --</option>';
+        allRooms.forEach(r => {
+            const opt = document.createElement('option');
+            opt.value = r.maphong;
+            opt.textContent = `${r.tenphong} (${r.tenrapphim || r.marapphim}) - ${r.soluongghe || '?'} ghế`;
+            if (r.maphong === selectedMaphong) opt.selected = true;
+            sel.appendChild(opt);
+        });
+    }
+
+    function populateDateFilter(showtimes) {
+        const sel = document.getElementById('showtime-date-filter');
+        const dates = [...new Set(showtimes.map(s => {
+            const d = new Date(s.ngaychieu || s.ngayChieu);
+            return isNaN(d) ? null : d.toISOString().split('T')[0];
+        }).filter(Boolean))].sort();
+
+        // Clear old dynamic options (keep the first "all dates" option)
+        while (sel.options.length > 1) sel.remove(1);
+
+        dates.forEach(dt => {
+            const opt = document.createElement('option');
+            opt.value = dt;
+            opt.textContent = new Date(dt).toLocaleDateString('vi-VN', { weekday: 'short', day: '2-digit', month: '2-digit', year: 'numeric' });
+            sel.appendChild(opt);
+        });
+    }
+
+    /* ===================== RENDER TABLE ===================== */
+
+    function renderShowtimesTable(list) {
+        const tbody = document.getElementById('showtimes-tbody');
+        if (!list || list.length === 0) {
+            tbody.innerHTML = `<tr><td colspan="7" style="text-align:center;color:var(--text-muted);padding:2rem;">
+                <i class="fa-solid fa-calendar-xmark" style="margin-right:8px;"></i>Không có lịch chiếu nào
+            </td></tr>`;
+            return;
+        }
+
+        tbody.innerHTML = list.map(s => {
+            const malichchieu = s.malichchieu || s.maLichChieu;
+            const tenphim     = s.tenphim    || s.tenPhim    || s.maphim   || s.maPhim   || '—';
+            const tenphong    = s.tenphong   || s.tenPhong   || s.maphong  || s.maPhong  || '—';
+            const tenrap      = s.tenrapphim || s.tenRapPhim || '';
+            const ngaychieu   = formatDate(s.ngaychieu   || s.ngayChieu);
+            const giochieu    = formatTime(s.giochieu    || s.gioChieu);
+            const gioketthuc  = formatTime(s.gioketthuc  || s.gioKetThuc);
+            const giave       = (s.giave ?? s.giaVe ?? 0).toLocaleString('vi-VN');
+
+            return `
+            <tr id="showtime-row-${malichchieu}">
+                <td>
+                    <div style="font-weight:600;font-size:0.9rem;">${tenphim}</div>
+                    <div style="font-size:0.75rem;color:var(--text-muted);margin-top:2px;">Mã: ${s.maphim || s.maPhim || '—'}</div>
+                </td>
+                <td>${ngaychieu}</td>
+                <td>
+                    <span style="background:rgba(229,9,20,0.1);color:var(--color-primary);padding:4px 10px;border-radius:4px;font-weight:600;font-size:0.85rem;">
+                        ${giochieu}
+                    </span>
+                </td>
+                <td>${gioketthuc}</td>
+                <td>
+                    <div style="font-weight:500;">${tenphong}</div>
+                    ${tenrap ? `<div style="font-size:0.75rem;color:var(--text-muted);">${tenrap}</div>` : ''}
+                </td>
+                <td>
+                    <span style="font-weight:600;color:#2ecc71;">${giave} ₫</span>
+                </td>
+                <td style="text-align:right;">
+                    <div style="display:inline-flex;gap:8px;">
+                        <button class="btn btn-outline" onclick="openEditShowtime('${malichchieu}')" style="margin:0;padding:6px 12px;font-size:0.8rem;border-radius:6px;">
+                            <i class="fa-solid fa-pen-to-square"></i> Sửa
+                        </button>
+                        <button class="btn btn-outline" onclick="deleteShowtime('${malichchieu}')" style="margin:0;padding:6px 12px;font-size:0.8rem;border-radius:6px;color:#ff4757;border-color:rgba(255,71,87,0.2);">
+                            <i class="fa-solid fa-trash-can"></i> Xóa
+                        </button>
+                    </div>
+                </td>
+            </tr>`;
+        }).join('');
+    }
+
+    /* ===================== FILTER ===================== */
+
+    function filterShowtimes() {
+        const query = document.getElementById('showtime-search-input').value.toLowerCase().trim();
+        const dateVal = document.getElementById('showtime-date-filter').value;
+
+        let filtered = allShowtimes;
+
+        if (query) {
+            filtered = filtered.filter(s => {
+                const tenphim  = (s.tenphim  || s.tenPhim  || s.maphim  || '').toLowerCase();
+                const tenphong = (s.tenphong || s.tenPhong || s.maphong || '').toLowerCase();
+                return tenphim.includes(query) || tenphong.includes(query);
+            });
+        }
+
+        if (dateVal) {
+            filtered = filtered.filter(s => {
+                const d = new Date(s.ngaychieu || s.ngayChieu);
+                return !isNaN(d) && d.toISOString().split('T')[0] === dateVal;
+            });
+        }
+
+        renderShowtimesTable(filtered);
+    }
+
+    /* ===================== ADD SHOWTIME ===================== */
+
+    async function saveNewShowtime(event) {
+        event.preventDefault();
+        const token = localStorage.getItem('admin_token');
+
+        const ngaychieu  = document.getElementById('add-ngaychieu').value;
+        const giochieu   = document.getElementById('add-giochieu').value;
+        const gioketthuc = document.getElementById('add-gioketthuc').value;
+
+        const payload = {
+            maphim:     document.getElementById('add-maphim').value,
+            maphong:    document.getElementById('add-maphong').value,
+            ngaychieu:  new Date(`${ngaychieu}T00:00:00`).toISOString(),
+            giochieu:   new Date(`${ngaychieu}T${giochieu}:00`).toISOString(),
+            gioketthuc: new Date(`${ngaychieu}T${gioketthuc}:00`).toISOString(),
+            giave:      parseInt(document.getElementById('add-giave').value)
+        };
+
+        try {
+            const res = await fetch('/api/admin/showtimes', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}`
+                },
+                body: JSON.stringify(payload)
+            });
+
+            const result = await res.json();
+            if (res.ok && (result.status === 'success' || result.malichchieu || result.maLichChieu)) {
+                showToast('Thêm lịch chiếu thành công!', 'success');
+                closeModal('add-showtime-modal');
+                document.getElementById('add-showtime-form').reset();
+                await loadShowtimes();
+            } else {
+                showToast(result.message || 'Lỗi khi thêm lịch chiếu', 'error');
+            }
+        } catch (err) {
+            console.error(err);
+            showToast('Lỗi kết nối máy chủ', 'error');
+        }
+    }
+
+    /* ===================== EDIT SHOWTIME ===================== */
+
+    function openEditShowtime(malichchieu) {
+        const s = allShowtimes.find(x => (x.malichchieu || x.maLichChieu) === malichchieu);
+        if (!s) return;
+
+        document.getElementById('edit-malichchieu').value    = malichchieu;
+        document.getElementById('edit-tenphim-readonly').value = s.tenphim || s.tenPhim || s.maphim || '—';
+
+        populateRoomSelect('edit-maphong-select', s.maphong || s.maPhong);
+
+        const ngay = new Date(s.ngaychieu || s.ngayChieu);
+        if (!isNaN(ngay)) {
+            document.getElementById('edit-ngaychieu').value = ngay.toISOString().split('T')[0];
+        }
+
+        const gio    = new Date(s.giochieu   || s.gioChieu);
+        const giokt  = new Date(s.gioketthuc || s.gioKetThuc);
+        document.getElementById('edit-giochieu').value   = isNaN(gio)   ? '' : `${gio.getHours().toString().padStart(2,'0')}:${gio.getMinutes().toString().padStart(2,'0')}`;
+        document.getElementById('edit-gioketthuc').value = isNaN(giokt) ? '' : `${giokt.getHours().toString().padStart(2,'0')}:${giokt.getMinutes().toString().padStart(2,'0')}`;
+        document.getElementById('edit-giave').value      = s.giave ?? s.giaVe ?? '';
+
+        openModal('edit-showtime-modal');
+    }
+
+    async function saveShowtimeEdit(event) {
+        event.preventDefault();
+        const token = localStorage.getItem('admin_token');
+        const malichchieu = document.getElementById('edit-malichchieu').value;
+
+        const ngaychieu  = document.getElementById('edit-ngaychieu').value;
+        const giochieu   = document.getElementById('edit-giochieu').value;
+        const gioketthuc = document.getElementById('edit-gioketthuc').value;
+
+        const payload = {
+            maphong:    document.getElementById('edit-maphong-select').value,
+            ngaychieu:  new Date(`${ngaychieu}T00:00:00`).toISOString(),
+            giochieu:   new Date(`${ngaychieu}T${giochieu}:00`).toISOString(),
+            gioketthuc: new Date(`${ngaychieu}T${gioketthuc}:00`).toISOString(),
+            giave:      parseInt(document.getElementById('edit-giave').value)
+        };
+
+        try {
+            const res = await fetch(`/Admin/api/showtimes/update/${malichchieu}`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}`
+                },
+                body: JSON.stringify(payload)
+            });
+
+            const result = await res.json();
+            if (res.ok && result.status === 'success') {
+                showToast('Cập nhật lịch chiếu thành công!', 'success');
+                closeModal('edit-showtime-modal');
+                await loadShowtimes();
+            } else {
+                showToast(result.message || 'Lỗi khi cập nhật lịch chiếu', 'error');
+            }
+        } catch (err) {
+            console.error(err);
+            showToast('Lỗi kết nối máy chủ', 'error');
+        }
+    }
+
+    /* ===================== DELETE SHOWTIME ===================== */
+
+    async function deleteShowtime(malichchieu) {
+        if (!confirm('Bạn có chắc muốn xóa lịch chiếu này? Hành động này không thể hoàn tác.')) return;
+
+        const token = localStorage.getItem('admin_token');
+        try {
+            const res = await fetch(`/Admin/api/showtimes/delete/${malichchieu}`, {
+                method: 'POST',
+                headers: { 'Authorization': `Bearer ${token}` }
+            });
+
+            const result = await res.json();
+            if (res.ok && result.status === 'success') {
+                showToast(result.message || 'Xóa lịch chiếu thành công!', 'success');
+                await loadShowtimes();
+            } else {
+                showToast(result.message || 'Lỗi khi xóa lịch chiếu', 'error');
+            }
+        } catch (err) {
+            console.error(err);
+            showToast('Lỗi kết nối máy chủ', 'error');
+        }
+    }
+
+    /* ===================== HELPERS ===================== */
+
+    function formatDate(raw) {
+        if (!raw) return '—';
+        const d = new Date(raw);
+        return isNaN(d) ? raw : d.toLocaleDateString('vi-VN', { weekday: 'short', day: '2-digit', month: '2-digit', year: 'numeric' });
+    }
+
+    function formatTime(raw) {
+        if (!raw) return '—';
+        const d = new Date(raw);
+        if (isNaN(d)) return raw;
+        return `${d.getHours().toString().padStart(2,'0')}:${d.getMinutes().toString().padStart(2,'0')}`;
+    }
+
+    function showToast(message, type = 'success') {
+        const toast = document.createElement('div');
+        toast.textContent = message;
+        Object.assign(toast.style, {
+            position: 'fixed', bottom: '24px', right: '24px', zIndex: '9999',
+            padding: '14px 24px', borderRadius: '10px', fontWeight: '600', fontSize: '0.9rem',
+            background: type === 'success' ? '#2ecc71' : '#ff4757',
+            color: '#fff', boxShadow: '0 6px 30px rgba(0,0,0,0.4)',
+            transition: 'opacity 0.4s', opacity: '1'
+        });
+        document.body.appendChild(toast);
+        setTimeout(() => { toast.style.opacity = '0'; }, 2600);
+        setTimeout(() => toast.remove(), 3100);
+    }
+
+    function openModal(id)  { document.getElementById(id).classList.add('active'); }
+    function closeModal(id) { document.getElementById(id).classList.remove('active'); }
+    function closeModalOnBackdrop(e, id) { if (e.target.id === id) closeModal(id); }
+</script>
+}

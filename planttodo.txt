@@ -1,0 +1,13 @@
+📊 Dashboard & Báo cáo (Stats)
+ Tổng quan Dashboard: Hiển thị doanh thu trong ngày, số vé bán ra, tổng khách hàng (Sử dụng API dashboard-summary).
+ Biểu đồ tăng trưởng: Biểu đồ đường (Daily Revenue) và biểu đồ cột (Weekly Revenue).
+ Xếp hạng: Top phim/rạp có doanh thu cao nhất.
+ Xuất báo cáo: Nút xuất file Excel báo cáo tháng (Sử dụng API reports/monthly).
+🎬 Quản lý Phim (Movies)
+ Danh sách phim: Hiển thị dưới dạng Grid/Table, lọc theo trạng thái (Now Showing, Coming Soon).
+ Import từ TMDB: Ô tìm kiếm phim trực tuyến, xem nhanh kết quả và nhấn "Thêm nhanh" vào hệ thống (Sử dụng API search và POST).
+ Chi tiết & Trạng thái: Chỉnh sửa mô tả, trailer và cập nhật trạng thái hiển thị.
+📅 Quản lý Suất chiếu (Showtimes)
+ Lịch chiếu tổng quát: Giao diện lịch (Calendar) hoặc danh sách lọc theo phim/phòng.
+ Tạo suất chiếu: Form chọn Phim + Phòng + Giờ bắt đầu (Hệ thống tự tính giờ kết thúc dựa trên thời lượng phim).
+ Cảnh báo trùng: Hiển thị thông báo nếu phòng đã có lịch chiếu khác trong cùng khung giờ.

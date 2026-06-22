@@ -364,12 +364,12 @@ namespace TicketBookingApi.Controllers.Admin
                 var revenueSql = @"
                     SELECT COALESCE(SUM(tongtien), 0)::int as total 
                     FROM dondatve 
-                    WHERE DATE(ngaydatve AT TIME ZONE 'Asia/Ho_Chi_Minh') = {0} AND trangthai = 'paid'";
+                    WHERE DATE(ngaydatve AT TIME ZONE 'Asia/Ho_Chi_Minh') = CAST({0} AS date) AND trangthai = 'paid'";
 
                 var ticketsSql = @"
                     SELECT COUNT(*)::int as total 
                     FROM vexemphim 
-                    WHERE DATE(thoigianphathanh) = {0} AND trangthai = 'active'";
+                    WHERE DATE(thoigianphathanh) = CAST({0} AS date) AND trangthai = 'active'";
 
                 var moviesSql = @"
                     SELECT COUNT(*)::int as total 
