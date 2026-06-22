@@ -6,7 +6,6 @@ using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using System.Text;
 using TicketBookingApi.Models;
-using BCrypt.Net;
 
 namespace TicketBookingApi.Controllers.Admin
 {
@@ -25,8 +24,8 @@ namespace TicketBookingApi.Controllers.Admin
 
         public class LoginDto
         {
-            public string Email { get; set; }
-            public string Password { get; set; }
+            public string Email { get; set; } = "";
+            public string Password { get; set; } = "";
         }
 
         [HttpPost("login")]
@@ -48,11 +47,15 @@ namespace TicketBookingApi.Controllers.Admin
             if (!passwordMatch && admin.Matkhau != dto.Password)
                 return Unauthorized(new { status = "error", message = "Mật khẩu không chính xác" });
 
+            var role = admin.Vaitro == "Quản Lý" ? "QuanLy" : "NhanVien";
+
             var claims = new[]
             {
                 new Claim(ClaimTypes.NameIdentifier, admin.IdNhanvien.ToString()),
                 new Claim("admin", "true"),
-                new Claim(ClaimTypes.Role, admin.Vaitro ?? "Admin")
+                new Claim(ClaimTypes.Role, role),
+                new Claim("role", role),
+                new Claim("maNhanVien", admin.Manhanvien)
             };
 
             var secret = _configuration["Jwt:Secret"] ?? "NHOM7_SECRET_KEY_DEFAULT_FALLBACK_123456789";
@@ -67,7 +70,20 @@ namespace TicketBookingApi.Controllers.Admin
                 signingCredentials: creds);
 
             var tokenString = new JwtSecurityTokenHandler().WriteToken(token);
-            return Ok(new { status = "success", token = tokenString, admin = new { id = admin.IdNhanvien, email = admin.Email, role = admin.Vaitro } });
+            return Ok(new
+            {
+                status = "success",
+                message = "Đăng nhập quản lý thành công",
+                token = tokenString,
+                staff = new
+                {
+                    id = admin.IdNhanvien,
+                    maNhanVien = admin.Manhanvien,
+                    hoTen = admin.Hoten,
+                    email = admin.Email,
+                    vaiTro = admin.Vaitro
+                }
+            });
         }
     }
 }
