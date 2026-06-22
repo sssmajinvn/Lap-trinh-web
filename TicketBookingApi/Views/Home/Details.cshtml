@@ -1,0 +1,472 @@
+@{
+    var movieId = ViewData["MovieId"] as string;
+    ViewData["Title"] = "Chi tiết phim";
+}
+
+<!-- 🌌 DETAILS HEADER WITH BLURRED BACKDROP -->
+<div class="details-hero">
+    <div class="details-backdrop" id="movie-backdrop"></div>
+    <div class="container details-container">
+        <div class="details-poster-box">
+            <img src="" id="movie-poster" alt="Poster">
+        </div>
+        <div class="details-info">
+            <div class="details-title-row">
+                <h1 class="details-title" id="movie-title">Đang tải...</h1>
+                <span class="movie-age-badge" id="movie-age-badge" style="position: static;">T18</span>
+            </div>
+            <div class="details-meta-row">
+                <div class="details-meta-item"><i class="fa-regular fa-clock"></i> <span id="movie-duration">120</span> phút</div>
+                <div class="details-meta-item"><i class="fa-solid fa-calendar-days"></i> Khởi chiếu: <span id="movie-release-date">--/--/----</span></div>
+                <div class="details-meta-item"><i class="fa-solid fa-star" style="color:var(--color-accent);"></i> <span id="movie-rating-val">9.0</span>/10 (IMDb)</div>
+            </div>
+            <div class="movie-hashtags" id="movie-genres" style="margin-top: 8px;">
+                <!-- Genres tags dynamically loaded -->
+            </div>
+            <div style="margin-top: var(--space-md);">
+                <a href="/Home/Booking?movieId=@movieId" class="btn btn-primary" id="btn-booking-now"><i class="fa-solid fa-ticket"></i> Mua Vé Ngay</a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- 🎬 DETAILS MAIN CONTENT -->
+<div class="container details-grid">
+    <!-- Cột Trái: Trailer + Mô tả + Diễn viên -->
+    <div style="display: flex; flex-direction: column; gap: var(--space-xl);">
+        <div>
+            <h2 class="section-title">Nội dung phim</h2>
+            <p id="movie-description" style="color: var(--text-muted); font-size: 1.05rem; text-align: justify; margin-top: var(--space-sm);">Đang tải nội dung mô tả bộ phim...</p>
+        </div>
+
+        <div>
+            <h2 class="section-title">Trailer chính thức</h2>
+            <div class="video-container" style="margin-top: var(--space-sm);">
+                <iframe id="movie-trailer-iframe" src="" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen></iframe>
+            </div>
+        </div>
+
+        <!-- 🎭 Đội ngũ sản xuất / Diễn viên -->
+        <div>
+            <h2 class="section-title">Đạo diễn & Diễn viên</h2>
+            <div style="margin-top: var(--space-md); display: flex; flex-direction: column; gap: var(--space-md);">
+                <div>
+                    <h4 style="font-size: 1rem; margin-bottom: 8px; color: var(--color-accent);">🎬 Đạo diễn</h4>
+                    <div class="cast-crew-list" id="directors-list">
+                        <!-- Loaded dynamically -->
+                    </div>
+                </div>
+                <div>
+                    <h4 style="font-size: 1rem; margin-bottom: 8px; color: var(--color-accent);">🎭 Diễn viên chính</h4>
+                    <div class="cast-crew-list" id="actors-list">
+                        <!-- Loaded dynamically -->
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Cột Phải: Khung Bình Luận & Đánh Giá -->
+    <div>
+        <div class="reviews-section">
+            <h2 class="section-title" style="font-size: 1.25rem;">Đánh giá của khán giả</h2>
+            
+            <!-- Khung viết đánh giá (chỉ hiện khi đủ điều kiện hoặc đã mua vé) -->
+            <div id="review-write-area" style="margin-top: var(--space-md);">
+                <div id="review-auth-prompt" style="text-align: center; padding: var(--space-md); background: rgba(255,255,255,0.02); border: 1px dashed var(--glass-border); border-radius: var(--radius-md);">
+                    <p style="color: var(--text-muted); font-size: 0.95rem; margin-bottom: 8px;">Bạn cần đăng nhập để gửi bình luận đánh giá phim này.</p>
+                    <button class="btn btn-secondary btn-block btn-sm" onclick="openModal('login-modal')">Đăng Nhập Ngay</button>
+                </div>
+                
+                <div id="review-form-box" style="display: none;">
+                    <div class="review-form-container">
+                        <h4 style="font-size: 0.95rem; margin-bottom: 8px;" id="review-box-title">Viết bình luận & Đánh giá của bạn:</h4>
+                        <form id="movie-review-form" onsubmit="submitReview(event)">
+                            <div class="form-group" style="margin-bottom: 8px;">
+                                <label class="form-label">Chọn điểm số của bạn (Từ 1 - 10 sao):</label>
+                                <div class="star-rating-selector" id="star-selector">
+                                    <!-- 10 Stars dynamically generated -->
+                                    <i class="fa-solid fa-star star-select-btn" data-value="1"></i>
+                                    <i class="fa-solid fa-star star-select-btn" data-value="2"></i>
+                                    <i class="fa-solid fa-star star-select-btn" data-value="3"></i>
+                                    <i class="fa-solid fa-star star-select-btn" data-value="4"></i>
+                                    <i class="fa-solid fa-star star-select-btn" data-value="5"></i>
+                                    <i class="fa-solid fa-star star-select-btn" data-value="6"></i>
+                                    <i class="fa-solid fa-star star-select-btn" data-value="7"></i>
+                                    <i class="fa-solid fa-star star-select-btn" data-value="8"></i>
+                                    <i class="fa-solid fa-star star-select-btn" data-value="9"></i>
+                                    <i class="fa-solid fa-star star-select-btn" data-value="10"></i>
+                                </div>
+                                <span id="star-rating-label" style="font-weight: 700; color: var(--color-accent); font-size: 0.95rem;">Chọn sao</span>
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label">Nội dung bình luận:</label>
+                                <textarea id="review-text" class="form-input" placeholder="Hãy chia sẻ cảm nhận của bạn về bộ phim..." style="resize: vertical; min-height: 80px; padding-left: 14px;" required></textarea>
+                            </div>
+                            <button type="submit" class="btn btn-primary btn-block btn-sm" id="btn-submit-review" style="margin-top: 10px;">Gửi Đánh Giá</button>
+                        </form>
+                    </div>
+                </div>
+
+                <div id="review-not-allowed-box" style="display: none; padding: var(--space-md); background: rgba(255,71,87,0.06); border: 1px solid rgba(255,71,87,0.2); border-radius: var(--radius-md); text-align: center; color: var(--text-muted); font-size: 0.9rem;">
+                    <i class="fa-solid fa-circle-info" style="color:#ff4757; margin-bottom: 6px; font-size: 1.25rem;"></i>
+                    <p>Bạn phải **mua vé và xem xong bộ phim này** mới có quyền gửi bình luận đánh giá.</p>
+                </div>
+            </div>
+
+            <!-- Danh sách bình luận -->
+            <div id="reviews-list-container" style="margin-top: var(--space-lg); display: flex; flex-direction: column; gap: var(--space-sm);">
+                <!-- Dynamic load -->
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        const movieId = "@movieId";
+        let userSelectedRating = 0;
+        let isEditingReview = false;
+
+        document.addEventListener('DOMContentLoaded', function() {
+            loadMovieDetails();
+            loadMovieReviews();
+            setupStarsSelector();
+            checkCanReview();
+        });
+
+        // 1. Load Movie Details
+        async function loadMovieDetails() {
+            try {
+                const response = await fetch(`/api/movies/${movieId}`);
+                const result = await response.json();
+                
+                if (response.ok && result.status === 'success') {
+                    const movie = result.data;
+                    
+                    document.title = movie.tenphim + " - Ticket Cinema";
+                    document.getElementById('movie-title').textContent = movie.tenphim;
+                    
+                    const backdrop = movie.posterUrl || 'https://images.unsplash.com/photo-1489599849927-2ee91cede3ba?w=1600&auto=format&fit=crop&q=80';
+                    document.getElementById('movie-backdrop').style.backgroundImage = `url('${backdrop}')`;
+                    document.getElementById('movie-poster').src = movie.posterUrl || 'https://images.unsplash.com/photo-1536440136628-849c177e76a1?w=500&auto=format&fit=crop&q=60';
+                    
+                    document.getElementById('movie-duration').textContent = movie.thoiluong || '120';
+                    
+                    if (movie.ngayramat) {
+                        const date = new Date(movie.ngayramat);
+                        document.getElementById('movie-release-date').textContent = date.toLocaleDateString('vi-VN');
+                    }
+                    
+                    // Giới hạn tuổi
+                    const ageEl = document.getElementById('movie-age-badge');
+                    ageEl.className = 'movie-age-badge';
+                    if (movie.gioihantuoi) {
+                        ageEl.textContent = `T${movie.gioihantuoi}`;
+                        if (movie.gioihantuoi >= 18) ageEl.classList.add('age-pg18');
+                        else if (movie.gioihantuoi >= 16) ageEl.classList.add('age-pg16');
+                        else if (movie.gioihantuoi >= 13) ageEl.classList.add('age-pg13');
+                    } else {
+                        ageEl.textContent = 'P';
+                        ageEl.classList.add('age-g');
+                    }
+                    
+                    // Hide booking button if coming soon
+                    if (movie.trangthai === 'coming_soon') {
+                        document.getElementById('btn-booking-now').style.display = 'none';
+                    }
+
+                    document.getElementById('movie-description').textContent = movie.mota || 'Chưa có tóm tắt cốt truyện cho bộ phim này.';
+
+                    // Nhúng YouTube Video
+                    if (movie.trailerUrl) {
+                        const ytId = getYoutubeId(movie.trailerUrl);
+                        if (ytId) {
+                            document.getElementById('movie-trailer-iframe').src = `https://www.youtube.com/embed/${ytId}`;
+                        } else {
+                            document.getElementById('movie-trailer-iframe').src = movie.trailerUrl;
+                        }
+                    }
+
+                    // Thể loại (Genres)
+                    const genresEl = document.getElementById('movie-genres');
+                    genresEl.innerHTML = '';
+                    if (movie.genres && movie.genres.length > 0) {
+                        movie.genres.forEach(genre => {
+                            genresEl.innerHTML += `<span class="badge badge-genre" style="margin-right: 6px;">${genre}</span>`;
+                        });
+                    }
+
+                    // Đạo diễn
+                    const dirEl = document.getElementById('directors-list');
+                    dirEl.innerHTML = '';
+                    if (movie.directors && movie.directors.length > 0) {
+                        movie.directors.forEach(d => {
+                            const avatar = d.avatar_url || 'https://api.dicebear.com/7.x/initials/svg?seed=' + d.name;
+                            dirEl.innerHTML += `
+                                <div class="person-card">
+                                    <img src="${avatar}" class="person-avatar" alt="${d.name}">
+                                    <div class="person-name">${d.name}</div>
+                                    <div class="person-role">Đạo diễn chính</div>
+                                </div>`;
+                        });
+                    } else {
+                        dirEl.innerHTML = `<p style="color:var(--text-muted); font-size:0.9rem;">Thông tin đang được cập nhật.</p>`;
+                    }
+
+                    // Diễn viên
+                    const actEl = document.getElementById('actors-list');
+                    actEl.innerHTML = '';
+                    if (movie.actors && movie.actors.length > 0) {
+                        movie.actors.forEach(a => {
+                            const avatar = a.avatar_url || 'https://api.dicebear.com/7.x/initials/svg?seed=' + a.name;
+                            actEl.innerHTML += `
+                                <div class="person-card">
+                                    <img src="${avatar}" class="person-avatar" alt="${a.name}">
+                                    <div class="person-name">${a.name}</div>
+                                    <div class="person-role">Diễn viên</div>
+                                </div>`;
+                        });
+                    } else {
+                        actEl.innerHTML = `<p style="color:var(--text-muted); font-size:0.9rem;">Thông tin đang được cập nhật.</p>`;
+                    }
+
+                } else {
+                    alert('Lỗi tải thông tin phim!');
+                }
+            } catch (err) {
+                console.error(err);
+            }
+        }
+
+        // Helper trích xuất Youtube Video ID
+        function getYoutubeId(url) {
+            const regExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|\&v=)([^#\&\?]*).*/;
+            const match = url.match(regExp);
+            return (match && match[2].length === 11) ? match[2] : null;
+        }
+
+        // 2. Load Reviews
+        async function loadMovieReviews() {
+            const listContainer = document.getElementById('reviews-list-container');
+            listContainer.innerHTML = '<div style="text-align:center; padding:10px;"><i class="fa-solid fa-spinner fa-spin"></i> Đang tải đánh giá...</div>';
+            
+            try {
+                const response = await fetch(`/api/reviews/movie/${movieId}`);
+                const result = await response.json();
+                
+                if (response.ok && result.status === 'success') {
+                    const reviews = result.data;
+                    renderReviews(reviews, listContainer);
+                } else {
+                    listContainer.innerHTML = '<p style="color:var(--color-primary);">Lỗi tải đánh giá.</p>';
+                }
+            } catch (err) {
+                console.error(err);
+                listContainer.innerHTML = '<p style="color:var(--color-primary);">Lỗi kết nối máy chủ.</p>';
+            }
+        }
+
+        function renderReviews(reviews, container) {
+            container.innerHTML = '';
+            
+            if (reviews.length === 0) {
+                container.innerHTML = `
+                    <div style="text-align: center; padding: var(--space-lg) 0; color: var(--text-muted);">
+                        <i class="fa-regular fa-comments fa-2x" style="margin-bottom: 8px; opacity:0.4;"></i>
+                        <p>Chưa có đánh giá nào cho phim này. Hãy là người đầu tiên chia sẻ cảm nhận!</p>
+                    </div>`;
+                document.getElementById('movie-rating-val').textContent = '10.0';
+                return;
+            }
+            
+            // Tính trung bình cộng điểm số đánh giá
+            let sum = 0;
+            reviews.forEach(r => sum += r.danhgia);
+            const avgRating = (sum / reviews.length).toFixed(1);
+            document.getElementById('movie-rating-val').textContent = avgRating;
+
+            reviews.forEach(r => {
+                const avatar = r.anhDaiDien || 'https://api.dicebear.com/7.x/avataaars/svg?seed=' + r.hoTen;
+                const date = new Date(r.thoidiemdanhgia).toLocaleDateString('vi-VN');
+                
+                let replyHtml = '';
+                if (r.noidungreply) {
+                    replyHtml = `
+                        <div class="review-reply">
+                            <div style="font-weight: 700; color: var(--color-accent); margin-bottom: 4px;"><i class="fa-solid fa-reply"></i> Phản hồi từ rạp:</div>
+                            <div>${r.noidungreply}</div>
+                        </div>`;
+                }
+
+                // Vẽ sao hiển thị
+                let starsHtml = '';
+                for (let i = 1; i <= 10; i++) {
+                    if (i <= r.danhgia) {
+                        starsHtml += '<i class="fa-solid fa-star" style="color:var(--color-accent); font-size:0.8rem; margin-right:1px;"></i>';
+                    } else {
+                        starsHtml += '<i class="fa-regular fa-star" style="color:var(--text-muted); font-size:0.8rem; margin-right:1px;"></i>';
+                    }
+                }
+
+                const itemHtml = `
+                    <div class="review-item">
+                        <div class="review-user-row">
+                            <div class="review-user">
+                                <img src="${avatar}" class="avatar" style="width:34px; height:34px;" alt="User">
+                                <div>
+                                    <div style="font-weight: 600; font-size: 0.9rem;">${r.hoTen}</div>
+                                    <div style="font-size: 0.75rem; color:var(--text-muted);">${date}</div>
+                                </div>
+                            </div>
+                            <div style="text-align: right;">
+                                <div class="review-rating"><i class="fa-solid fa-star"></i> ${r.danhgia}/10</div>
+                                <div style="margin-top: 4px;">${starsHtml}</div>
+                            </div>
+                        </div>
+                        <div class="review-content">${r.noidung}</div>
+                        ${replyHtml}
+                    </div>
+                `;
+                container.innerHTML += itemHtml;
+            });
+        }
+
+        // 3. Setup Star Selector (1-10 stars)
+        function setupStarsSelector() {
+            const stars = document.querySelectorAll('#star-selector .star-select-btn');
+            const label = document.getElementById('star-rating-label');
+            
+            stars.forEach(star => {
+                star.addEventListener('mouseover', function() {
+                    const hoverValue = parseInt(this.getAttribute('data-value'));
+                    highlightStars(hoverValue);
+                    label.textContent = `${hoverValue}/10 Sao`;
+                });
+                
+                star.addEventListener('mouseout', function() {
+                    highlightStars(userSelectedRating);
+                    if (userSelectedRating > 0) {
+                        label.textContent = `${userSelectedRating}/10 Sao`;
+                    } else {
+                        label.textContent = 'Chọn sao';
+                    }
+                });
+                
+                star.addEventListener('click', function() {
+                    userSelectedRating = parseInt(this.getAttribute('data-value'));
+                    highlightStars(userSelectedRating);
+                    label.textContent = `${userSelectedRating}/10 Sao`;
+                });
+            });
+        }
+
+        function highlightStars(val) {
+            const stars = document.querySelectorAll('#star-selector .star-select-btn');
+            stars.forEach(star => {
+                const starVal = parseInt(star.getAttribute('data-value'));
+                if (starVal <= val) {
+                    star.classList.add('active');
+                } else {
+                    star.classList.remove('active');
+                }
+            });
+        }
+
+        // 4. Check if User can write review
+        async function checkCanReview() {
+            const token = localStorage.getItem('jwt_token');
+            const authPrompt = document.getElementById('review-auth-prompt');
+            const formBox = document.getElementById('review-form-box');
+            const notAllowedBox = document.getElementById('review-not-allowed-box');
+            
+            authPrompt.style.display = 'block';
+            formBox.style.display = 'none';
+            notAllowedBox.style.display = 'none';
+            
+            if (!token) return; // Chưa đăng nhập thì hiện prompt đăng nhập
+
+            authPrompt.style.display = 'none';
+
+            try {
+                const response = await fetch(`/api/reviews/movie/${movieId}/can-review`, {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+                
+                const result = await response.json();
+                
+                if (response.ok && result.status === 'success') {
+                    if (result.canReview) {
+                        formBox.style.display = 'block';
+                        
+                        // Nếu đã đánh giá rồi thì chuyển sang chế độ cập nhật
+                        if (result.existingReview) {
+                            isEditingReview = true;
+                            document.getElementById('review-box-title').textContent = 'Chỉnh sửa bình luận & đánh giá cũ của bạn:';
+                            document.getElementById('review-text').value = result.existingReview.noidung || '';
+                            userSelectedRating = result.existingReview.danhgia || 0;
+                            highlightStars(userSelectedRating);
+                            document.getElementById('star-rating-label').textContent = `${userSelectedRating}/10 Sao`;
+                            document.getElementById('btn-submit-review').textContent = 'Cập nhật đánh giá';
+                        }
+                    } else {
+                        notAllowedBox.style.display = 'block';
+                    }
+                }
+            } catch (err) {
+                console.error('Lỗi kiểm tra quyền bình luận:', err);
+            }
+        }
+
+        // 5. Submit Review
+        async function submitReview(event) {
+            event.preventDefault();
+            const token = localStorage.getItem('jwt_token');
+            const content = document.getElementById('review-text').value;
+            const btnSubmit = document.getElementById('btn-submit-review');
+            
+            if (!token) {
+                openModal('login-modal');
+                return;
+            }
+            
+            if (userSelectedRating === 0) {
+                alert('Vui lòng chọn số sao đánh giá phim (từ 1 đến 10)!');
+                return;
+            }
+            
+            btnSubmit.disabled = true;
+            btnSubmit.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Đang gửi...';
+            
+            try {
+                const response = await fetch(`/api/reviews/movie/${movieId}`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${token}`
+                    },
+                    body: JSON.stringify({
+                        noiDung: content,
+                        danhGia: userSelectedRating
+                    })
+                });
+                
+                const result = await response.json();
+                
+                if (response.ok || response.status === 201) {
+                    alert(isEditingReview ? 'Cập nhật đánh giá thành công!' : 'Đăng đánh giá thành công! Cảm ơn bạn.');
+                    loadMovieReviews();
+                    checkCanReview(); // load lại xem thông tin sửa đổi
+                } else {
+                    alert(result.message || 'Lỗi gửi đánh giá.');
+                }
+            } catch (err) {
+                console.error(err);
+                alert('Lỗi kết nối máy chủ gửi review.');
+            } finally {
+                btnSubmit.disabled = false;
+                btnSubmit.textContent = isEditingReview ? 'Cập nhật đánh giá' : 'Gửi Đánh Giá';
+            }
+        }
+    </script>
+}

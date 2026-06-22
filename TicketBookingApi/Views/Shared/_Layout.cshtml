@@ -1,0 +1,329 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>@ViewData["Title"] - Ticket Booking Cinema</title>
+    
+    <!-- FontAwesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <!-- Custom Design System CSS -->
+    <link rel="stylesheet" href="/css/design-system.css">
+    
+    @RenderSection("Styles", required: false)
+</head>
+<body>
+
+    <!-- 🌌 Navbar -->
+    <nav class="navbar">
+        <div class="container navbar-container">
+            <a href="/" class="brand">
+                <i class="fa-solid fa-film"></i> TICKET<span>CINEMA</span>
+            </a>
+            
+            <div class="nav-menu">
+                <a href="/" class="nav-link" id="nav-home"><i class="fa-solid fa-house"></i> Trang chủ</a>
+                <a href="/Home/Search" class="nav-link" id="nav-search"><i class="fa-solid fa-magnifying-glass"></i> Tìm kiếm</a>
+
+            </div>
+            
+            <div class="nav-auth">
+                <!-- Sẽ được điền động bằng JS dựa trên trạng thái đăng nhập -->
+                <div id="auth-loading" style="color: var(--text-muted); font-size: 0.9rem;">
+                    <i class="fa-solid fa-spinner fa-spin"></i> Đang tải...
+                </div>
+                
+                <div id="auth-anonymous" style="display: none; gap: var(--space-sm);">
+                    <button class="btn btn-secondary" onclick="openModal('login-modal')">Đăng Nhập</button>
+                    <button class="btn btn-primary" onclick="openModal('register-modal')">Đăng Ký</button>
+                </div>
+                
+                <div id="auth-logged" style="display: none;">
+                    <div class="user-profile">
+                        <img src="" id="user-avatar" class="avatar" alt="Avatar">
+                        <span id="user-display-name" class="user-name">Khách</span>
+                        <i class="fa-solid fa-chevron-down" style="font-size: 0.8rem; color: var(--text-muted);"></i>
+                        
+                        <div class="profile-dropdown">
+                            <a href="#" class="dropdown-item"><i class="fa-solid fa-user"></i> Hồ sơ của tôi</a>
+                            <a href="#" class="dropdown-item"><i class="fa-solid fa-ticket"></i> Lịch sử đặt vé</a>
+                            <div style="border-top: 1px solid var(--glass-border); margin: 4px 0;"></div>
+                            <a href="#" class="dropdown-item" onclick="logout(event)"><i class="fa-solid fa-right-from-bracket"></i> Đăng xuất</a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- 🎬 Main Content Area -->
+    <main>
+        @RenderBody()
+    </main>
+
+    <!-- 🌌 Footer -->
+    <footer class="footer">
+        <div class="container footer-grid">
+            <div class="footer-column">
+                <div class="footer-logo">
+                    <i class="fa-solid fa-film"></i> TICKET<span>CINEMA</span>
+                </div>
+                <p style="margin-bottom: var(--space-md); max-width: 320px;">Hệ thống đặt vé xem phim trực tuyến hiện đại bậc nhất. Đem lại trải nghiệm điện ảnh chân thực và tiện lợi nhất cho bạn.</p>
+                <p>&copy; 2026 Nhóm 7 - TicketBooking Project. All rights reserved.</p>
+            </div>
+            <div class="footer-column">
+                <h4>Khám phá</h4>
+                <ul class="footer-links">
+                    <li><a href="/">Trang chủ</a></li>
+                    <li><a href="/Home/Search">Tìm kiếm phim</a></li>
+
+                </ul>
+            </div>
+            <div class="footer-column">
+                <h4>Liên hệ</h4>
+                <ul class="footer-links" style="color: var(--text-muted);">
+                    <li><i class="fa-solid fa-envelope"></i> support@ticketcinema.vn</li>
+                    <li><i class="fa-solid fa-phone"></i> 1900 1234 (8:00 - 22:00)</li>
+                    <li><i class="fa-solid fa-location-dot"></i> Đại học Công nghệ Thông tin</li>
+                </ul>
+            </div>
+        </div>
+        <div class="footer-bottom container">
+            <p>Phát triển trên nền tảng .NET Core 8.0 & Entity Framework Core & PostgreSQL.</p>
+        </div>
+    </footer>
+
+    <!-- 🔑 MODAL ĐĂNG NHẬP -->
+    <div id="login-modal" class="modal-backdrop" onclick="closeModalOnBackdrop(event, 'login-modal')">
+        <div class="modal-card">
+            <div class="modal-header">
+                <h3 class="modal-title"><i class="fa-solid fa-right-to-bracket text-primary"></i> Đăng Nhập</h3>
+                <button class="close-modal" onclick="closeModal('login-modal')">&times;</button>
+            </div>
+            <form id="login-form" onsubmit="handleLogin(event)">
+                <div id="login-error" class="badge age-pg18" style="display:none; width:100%; margin-bottom:var(--space-md); border-radius:var(--radius-sm); text-align:center; padding: 10px;"></div>
+                <div class="form-group">
+                    <label class="form-label">Tài khoản hoặc Email</label>
+                    <input type="text" id="login-username" class="form-input" placeholder="Nhập tài khoản hoặc email của bạn" required autocomplete="username">
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Mật khẩu</label>
+                    <input type="password" id="login-password" class="form-input" placeholder="Nhập mật khẩu" required autocomplete="current-password">
+                </div>
+                <button type="submit" class="btn btn-primary btn-block" style="margin-top:var(--space-md);">Đăng Nhập</button>
+            </form>
+            <div class="modal-footer">
+                Chưa có tài khoản? <a href="#" onclick="switchModal('login-modal', 'register-modal')" style="color:var(--color-primary); font-weight:600;">Đăng ký ngay</a>
+            </div>
+        </div>
+    </div>
+
+    <!-- 📝 MODAL ĐĂNG KÝ -->
+    <div id="register-modal" class="modal-backdrop" onclick="closeModalOnBackdrop(event, 'register-modal')">
+        <div class="modal-card" style="width: 480px;">
+            <div class="modal-header">
+                <h3 class="modal-title"><i class="fa-solid fa-user-plus text-primary"></i> Đăng Ký</h3>
+                <button class="close-modal" onclick="closeModal('register-modal')">&times;</button>
+            </div>
+            <form id="register-form" onsubmit="handleRegister(event)">
+                <div id="register-error" class="badge age-pg18" style="display:none; width:100%; margin-bottom:var(--space-md); border-radius:var(--radius-sm); text-align:center; padding: 10px;"></div>
+                <div id="register-success" class="badge age-g" style="display:none; width:100%; margin-bottom:var(--space-md); border-radius:var(--radius-sm); text-align:center; padding: 10px;"></div>
+                <div class="form-group">
+                    <label class="form-label">Tài khoản</label>
+                    <input type="text" id="reg-username" class="form-input" placeholder="Từ 6 ký tự viết liền, không dấu" required autocomplete="username">
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Họ và tên</label>
+                    <input type="text" id="reg-fullname" class="form-input" placeholder="Nhập họ và tên đầy đủ" required>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Email</label>
+                    <input type="email" id="reg-email" class="form-input" placeholder="example@email.com" required autocomplete="email">
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Số điện thoại</label>
+                    <input type="text" id="reg-phone" class="form-input" placeholder="Nhập số điện thoại" required>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Mật khẩu</label>
+                    <input type="password" id="reg-password" class="form-input" placeholder="Tối thiểu 6 ký tự" required autocomplete="new-password">
+                </div>
+                <button type="submit" class="btn btn-primary btn-block" style="margin-top:var(--space-md);">Đăng Ký Tài Khoản</button>
+            </form>
+            <div class="modal-footer">
+                Đã có tài khoản? <a href="#" onclick="switchModal('register-modal', 'login-modal')" style="color:var(--color-primary); font-weight:600;">Đăng nhập</a>
+            </div>
+        </div>
+    </div>
+
+    <!-- 🌐 Global JS Logic -->
+    <script>
+        // Thiết lập link navigation active
+        const currentPath = window.location.pathname.toLowerCase();
+        if (currentPath === '/' || currentPath === '/home/index' || currentPath === '/home') {
+            document.getElementById('nav-home').classList.add('active');
+        } else if (currentPath.includes('/search')) {
+            document.getElementById('nav-search').classList.add('active');
+        } else if (currentPath.includes('/styleguide')) {
+            document.getElementById('nav-styleguide').classList.add('active');
+        }
+
+        // Modal Helpers
+        function openModal(id) {
+            document.getElementById(id).classList.add('show');
+            document.body.style.overflow = 'hidden';
+        }
+        function closeModal(id) {
+            document.getElementById(id).classList.remove('show');
+            document.body.style.overflow = '';
+        }
+        function closeModalOnBackdrop(event, id) {
+            if (event.target.id === id) {
+                closeModal(id);
+            }
+        }
+        function switchModal(fromId, toId) {
+            closeModal(fromId);
+            setTimeout(() => openModal(toId), 300);
+        }
+
+        // Auth Authentication State Management
+        document.addEventListener('DOMContentLoaded', function() {
+            checkLoginState();
+        });
+
+        function getAuthToken() {
+            return localStorage.getItem('jwt_token');
+        }
+
+        function checkLoginState() {
+            const token = getAuthToken();
+            const loadingEl = document.getElementById('auth-loading');
+            const anonymousEl = document.getElementById('auth-anonymous');
+            const loggedEl = document.getElementById('auth-logged');
+            
+            loadingEl.style.display = 'none';
+            
+            if (token) {
+                try {
+                    const userData = JSON.parse(localStorage.getItem('user_data'));
+                    if (userData) {
+                        document.getElementById('user-display-name').textContent = userData.hoTen || userData.maTaiKhoan;
+                        document.getElementById('user-avatar').src = userData.anhdaidien || 'https://api.dicebear.com/7.x/adventurer/svg?seed=' + userData.maTaiKhoan;
+                        loggedEl.style.display = 'block';
+                        anonymousEl.style.display = 'none';
+                        return;
+                    }
+                } catch(e) {
+                    console.error('Lỗi parse thông tin user:', e);
+                }
+                // Token không hợp lệ hoặc lỗi
+                localStorage.removeItem('jwt_token');
+                localStorage.removeItem('user_data');
+            }
+            
+            anonymousEl.style.display = 'flex';
+            loggedEl.style.display = 'none';
+        }
+
+        // Đăng nhập API
+        async function handleLogin(event) {
+            event.preventDefault();
+            const username = document.getElementById('login-username').value;
+            const password = document.getElementById('login-password').value;
+            const errorEl = document.getElementById('login-error');
+            
+            errorEl.style.display = 'none';
+            
+            try {
+                const response = await fetch('/api/auth/login', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ usernameOrEmail: username, password: password })
+                });
+                
+                const result = await response.json();
+                if (response.ok && result.status === 'success') {
+                    localStorage.setItem('jwt_token', result.token);
+                    localStorage.setItem('user_data', JSON.stringify(result.user));
+                    closeModal('login-modal');
+                    window.location.reload();
+                } else {
+                    errorEl.textContent = result.message || 'Đăng nhập thất bại. Vui lòng kiểm tra lại.';
+                    errorEl.style.display = 'block';
+                }
+            } catch (err) {
+                console.error(err);
+                errorEl.textContent = 'Có lỗi xảy ra kết nối đến hệ thống.';
+                errorEl.style.display = 'block';
+            }
+        }
+
+        // Đăng ký API
+        async function handleRegister(event) {
+            event.preventDefault();
+            const username = document.getElementById('reg-username').value;
+            const fullname = document.getElementById('reg-fullname').value;
+            const email = document.getElementById('reg-email').value;
+            const phone = document.getElementById('reg-phone').value;
+            const password = document.getElementById('reg-password').value;
+            
+            const errorEl = document.getElementById('register-error');
+            const successEl = document.getElementById('register-success');
+            
+            errorEl.style.display = 'none';
+            successEl.style.display = 'none';
+            
+            try {
+                const response = await fetch('/api/auth/register', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        mataikhoan: username,
+                        hoten: fullname,
+                        email: email,
+                        sdt: phone,
+                        matkhau: password
+                    })
+                });
+                
+                const result = await response.json();
+                if (response.status === 201 && result.status === 'success') {
+                    successEl.textContent = 'Đăng ký thành công! Đang chuyển hướng sang Đăng nhập...';
+                    successEl.style.display = 'block';
+                    setTimeout(() => {
+                        switchModal('register-modal', 'login-modal');
+                        document.getElementById('login-username').value = username;
+                        successEl.style.display = 'none';
+                        document.getElementById('register-form').reset();
+                    }, 1500);
+                } else {
+                    let errMsg = result.message || 'Đăng ký không thành công.';
+                    if (result.errors && Array.isArray(result.errors)) {
+                        errMsg = result.errors.map(e => e.description).join('<br>');
+                    } else if (result.errors && typeof result.errors === 'object') {
+                        errMsg = Object.values(result.errors).join('<br>');
+                    }
+                    errorEl.innerHTML = errMsg;
+                    errorEl.style.display = 'block';
+                }
+            } catch (err) {
+                console.error(err);
+                errorEl.textContent = 'Lỗi kết nối máy chủ.';
+                errorEl.style.display = 'block';
+            }
+        }
+
+        // Đăng xuất
+        function logout(event) {
+            event.preventDefault();
+            localStorage.removeItem('jwt_token');
+            localStorage.removeItem('user_data');
+            window.location.reload();
+        }
+    </script>
+
+    @RenderSection("Scripts", required: false)
+</body>
+</html>

@@ -1,0 +1,236 @@
+@{
+    ViewData["Title"] = "Tìm kiếm & Lọc phim";
+}
+
+<div class="container" style="padding: var(--space-xl) var(--space-md); min-height: 80vh;">
+    <!-- 🔍 SEARCH BAR AREA -->
+    <div style="margin-bottom: var(--space-xl);">
+        <h1 style="font-size: 2rem; margin-bottom: var(--space-md); text-align: center;"><i class="fa-solid fa-magnifying-glass text-primary"></i> Tìm Kiếm & Lọc Phim</h1>
+        
+        <!-- Bộ lọc Form -->
+        <div style="background-color: var(--glass-bg); border: 1px solid var(--glass-border); border-radius: var(--radius-md); padding: var(--space-lg); display: flex; flex-direction: column; gap: var(--space-md); box-shadow: var(--shadow-glass); max-width: 900px; margin: 0 auto;">
+            <div style="display: grid; grid-template-columns: 2fr 1fr 1fr; gap: var(--space-md);">
+                <!-- Tên phim -->
+                <div class="form-group">
+                    <label class="form-label">Tên phim cần tìm</label>
+                    <div class="search-box">
+                        <i class="fa-solid fa-magnifying-glass search-icon"></i>
+                        <input type="text" id="search-name" class="form-input" placeholder="Nhập tên phim..." onkeyup="handleEnterKey(event)">
+                    </div>
+                </div>
+                
+                <!-- Thể loại -->
+                <div class="form-group">
+                    <label class="form-label">Thể loại</label>
+                    <select id="search-genre" class="form-select" onchange="triggerSearch()">
+                        <option value="">Tất cả thể loại</option>
+                        <!-- Loaded dynamically -->
+                    </select>
+                </div>
+                
+                <!-- Hashtag -->
+                <div class="form-group">
+                    <label class="form-label">Hashtag (#phimhot...)</label>
+                    <div class="search-box">
+                        <i class="fa-solid fa-hashtag search-icon" style="left:12px;"></i>
+                        <input type="text" id="search-hashtag" class="form-input" placeholder="phimhot, lyhai..." style="padding-left: 32px;" onkeyup="handleEnterKey(event)">
+                    </div>
+                </div>
+            </div>
+            
+            <div style="display: flex; justify-content: flex-end; gap: var(--space-md);">
+                <button class="btn btn-secondary" onclick="resetFilters()"><i class="fa-solid fa-arrow-rotate-left"></i> Nhập lại</button>
+                <button class="btn btn-primary" onclick="triggerSearch()"><i class="fa-solid fa-magnifying-glass"></i> Tìm Phim</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 🎬 SEARCH RESULTS GRID -->
+    <div>
+        <h2 class="section-title" id="results-count-title">Kết quả tìm kiếm</h2>
+        <div class="grid-4" id="search-results-grid" style="margin-top: var(--space-lg);">
+            <!-- Loaded dynamically via AJAX -->
+            <div style="grid-column: 1 / -1; text-align: center; padding: var(--space-xl) 0; color: var(--text-muted);">
+                <i class="fa-solid fa-spinner fa-spin fa-2x" style="margin-bottom: 10px;"></i>
+                <p>Đang tải danh sách phim...</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            loadGenresFilter();
+            
+            // Đọc query parameters nếu có (ví dụ từ nút tìm kiếm hoặc trang chủ chuyển sang)
+            const urlParams = new URLSearchParams(window.location.search);
+            const tagParam = urlParams.get('hashtag');
+            const genreParam = urlParams.get('genre');
+            const nameParam = urlParams.get('name');
+            
+            if (tagParam) document.getElementById('search-hashtag').value = tagParam;
+            if (genreParam) document.getElementById('search-genre').value = genreParam;
+            if (nameParam) document.getElementById('search-name').value = nameParam;
+            
+            triggerSearch();
+        });
+
+        // Tải các thể loại phim vào dropdown filter
+        async function loadGenresFilter() {
+            try {
+                const response = await fetch('/Home/GetAllGenres');
+                const result = await response.json();
+                
+                if (response.ok && result.status === 'success') {
+                    const select = document.getElementById('search-genre');
+                    result.data.forEach(genre => {
+                        const option = document.createElement('option');
+                        option.value = genre;
+                        option.textContent = genre;
+                        
+                        // Set selected nếu có query param trùng
+                        const urlParams = new URLSearchParams(window.location.search);
+                        if (urlParams.get('genre') === genre) {
+                            option.selected = true;
+                        }
+                        
+                        select.appendChild(option);
+                    });
+                }
+            } catch (err) {
+                console.error('Lỗi tải danh mục thể loại:', err);
+            }
+        }
+
+        // Nhấn Enter để tìm
+        function handleEnterKey(event) {
+            if (event.key === 'Enter') {
+                triggerSearch();
+            }
+        }
+
+        // Reset bộ lọc
+        function resetFilters() {
+            document.getElementById('search-name').value = '';
+            document.getElementById('search-genre').value = '';
+            document.getElementById('search-hashtag').value = '';
+            triggerSearch();
+        }
+
+        // Gọi API tìm kiếm
+        async function triggerSearch() {
+            const name = document.getElementById('search-name').value.trim();
+            const genre = document.getElementById('search-genre').value;
+            const hashtag = document.getElementById('search-hashtag').value.trim();
+            const gridEl = document.getElementById('search-results-grid');
+            
+            gridEl.innerHTML = `
+                <div style="grid-column: 1 / -1; text-align: center; padding: var(--space-xl) 0; color: var(--text-muted);">
+                    <i class="fa-solid fa-spinner fa-spin fa-2x" style="margin-bottom: 10px;"></i>
+                    <p>Đang tìm kiếm phim...</p>
+                </div>
+            `;
+            
+            // Xây dựng query URL gọi API trong HomeController của chúng ta
+            let params = new URLSearchParams();
+            if (name) params.append('name', name);
+            if (genre) params.append('genre', genre);
+            if (hashtag) params.append('hashtag', hashtag);
+            
+            try {
+                const response = await fetch(`/Home/GetSearchMovies?${params.toString()}`);
+                const result = await response.json();
+                
+                if (response.ok && result.status === 'success') {
+                    const movies = result.data;
+                    document.getElementById('results-count-title').textContent = `Kết quả tìm kiếm (${movies.length} phim)`;
+                    renderSearchResults(movies, gridEl);
+                } else {
+                    gridEl.innerHTML = `<div style="grid-column: 1/-1; text-align:center; padding:2rem; color:var(--color-primary)">Lỗi truy vấn dữ liệu từ máy chủ.</div>`;
+                }
+            } catch (err) {
+                console.error(err);
+                gridEl.innerHTML = `<div style="grid-column: 1/-1; text-align:center; padding:2rem; color:var(--color-primary)">Lỗi kết nối API.</div>`;
+            }
+        }
+
+        function renderSearchResults(movies, containerEl) {
+            containerEl.innerHTML = '';
+            
+            if (movies.length === 0) {
+                containerEl.innerHTML = `
+                    <div style="grid-column: 1 / -1; text-align: center; padding: 4rem 0; color: var(--text-muted);">
+                        <i class="fa-solid fa-magnifying-glass-minus fa-3x" style="margin-bottom: 15px; opacity:0.4;"></i>
+                        <p style="font-size: 1.1rem; font-weight: 500;">Không tìm thấy bộ phim nào phù hợp với bộ lọc!</p>
+                        <p style="font-size: 0.9rem; margin-top: 4px;">Hãy thử thay đổi từ khóa hoặc thể loại khác.</p>
+                    </div>
+                `;
+                return;
+            }
+            
+            movies.forEach(movie => {
+                const poster = movie.posterUrl || 'https://images.unsplash.com/photo-1536440136628-849c177e76a1?w=500&auto=format&fit=crop&q=60';
+                
+                // Độ tuổi giới hạn
+                let ageBadge = 'P';
+                let ageClass = 'age-g';
+                if (movie.gioihantuoi) {
+                    ageBadge = `T${movie.gioihantuoi}`;
+                    if (movie.gioihantuoi >= 18) ageClass = 'age-pg18';
+                    else if (movie.gioihantuoi >= 16) ageClass = 'age-pg16';
+                    else if (movie.gioihantuoi >= 13) ageClass = 'age-pg13';
+                }
+
+                // Nhãn Hashtags
+                let hashtagsHtml = '';
+                if (movie.hashtags && movie.hashtags.length > 0) {
+                    movie.hashtags.forEach(h => {
+                        hashtagsHtml += `<span class="badge-hashtag" style="cursor:pointer;" onclick="searchByHashtag('${h}')">#${h}</span>`;
+                    });
+                } else if (movie.genres && movie.genres.length > 0) {
+                    movie.genres.slice(0, 2).forEach(g => {
+                        hashtagsHtml += `<span class="badge-hashtag">#${g.toLowerCase().replace(/\s+/g, '')}</span>`;
+                    });
+                }
+
+                // Trạng thái hiển thị nút đặt vé
+                let actionBtnHtml = '';
+                if (movie.trangthai === 'showing' || movie.trangthai === 'now_showing') {
+                    actionBtnHtml = `<a href="/Home/Booking?movieId=${movie.maphim}" class="btn btn-primary btn-block text-center mt-2"><i class="fa-solid fa-ticket"></i> Đặt Vé</a>`;
+                } else {
+                    actionBtnHtml = `<a href="/Home/Details/${movie.maphim}" class="btn btn-secondary btn-block text-center mt-2"><i class="fa-solid fa-circle-info"></i> Xem Chi Tiết</a>`;
+                }
+
+                const cardHtml = `
+                    <div class="movie-card">
+                        <div class="movie-poster-wrapper">
+                            <img src="${poster}" alt="${movie.tenphim}" class="movie-poster" loading="lazy">
+                            <span class="movie-age-badge ${ageClass}">${ageBadge}</span>
+                        </div>
+                        <div class="movie-info">
+                            <h3 class="movie-title">${movie.tenphim}</h3>
+                            <div class="movie-meta">
+                                <span><i class="fa-regular fa-clock"></i> ${movie.thoiluong || '120'} phút</span>
+                                <span class="movie-rating"><i class="fa-solid fa-star"></i> 9.0</span>
+                            </div>
+                            <div class="movie-hashtags">
+                                ${hashtagsHtml}
+                            </div>
+                            ${actionBtnHtml}
+                        </div>
+                    </div>
+                `;
+                containerEl.innerHTML += cardHtml;
+            });
+        }
+
+        // Hỗ trợ click vào hashtag trên thẻ phim để tìm kiếm nhanh
+        function searchByHashtag(tag) {
+            document.getElementById('search-name').value = '';
+            document.getElementById('search-genre').value = '';
+            document.getElementById('search-hashtag').value = tag;
+            triggerSearch();
+        }
+    </script>
+}

@@ -1,0 +1,161 @@
+================================================================
+TÀI LIỆU GHI LẠI CÔNG VIỆC ĐÃ THỰC HIỆN
+Dự án: TicketBookingApi - Hệ thống đặt vé xem phim
+Nhóm: Nhóm 7
+Ngày thực hiện: 22/06/2026
+Cập nhật lần cuối: 22/06/2026
+================================================================
+
+1. MỤC TIÊU
+-----------
+Tạo phần giao diện người dùng (UI) bằng ASP.NET Core MVC (Razor Views)
+theo chuẩn thiết kế Dark Cinema Mode (form-ui.md), KHÔNG chỉnh sửa
+bất kỳ file backend, API, Model, Service nào đã có.
+
+2. CÁC FILE ĐÃ TẠO MỚI (KHÔNG SỬA FILE CŨ)
+---------------------------------------------
+
+[A] CẤU HÌNH
+ - TicketBookingApi/Program.cs
+   + Thay AddControllers() thành AddControllersWithViews()
+   + Thêm middleware app.UseStaticFiles()
+   + Thêm app.MapControllerRoute() cho định tuyến MVC
+   + Thêm middleware redirect /index.html -> / (tránh lỗi IIS Express 404)
+   + Đổi Swagger RoutePrefix từ "" sang "swagger"
+     (nhường đường dẫn / cho trang chủ MVC)
+
+ - TicketBookingApi/Properties/launchSettings.json
+   + Đổi launchUrl từ "swagger" thành "" cho cả 3 profile
+     (để trình duyệt mở thẳng Trang chủ khi chạy project)
+
+[B] CONTROLLER MỚI
+ - TicketBookingApi/Controllers/HomeController.cs  [FILE MỚI]
+   + Action Index()             -> Trang chủ
+   + Action Details(id)        -> Chi tiết phim
+   + Action Search()           -> Tìm kiếm phim
+   + Action Booking()          -> Chọn suất chiếu
+   + Action GetSearchMovies()  -> API tìm kiếm nâng cao (tên/thể loại/hashtag)
+   + Action GetAllGenres()     -> API lấy danh sách thể loại để điền dropdown
+
+[C] VIEWS (RAZOR VIEWS .CSHTML)
+ - TicketBookingApi/Views/_ViewStart.cshtml          [FILE MỚI]
+   + Thiết lập Layout mặc định toàn hệ thống
+
+ - TicketBookingApi/Views/Shared/_Layout.cshtml      [FILE MỚI]
+   + Header: Logo + Thanh điều hướng (Trang chủ, Tìm kiếm)
+   + Hỗ trợ quản lý trạng thái đăng nhập JWT (localStorage)
+   + Modal Đăng nhập & Modal Đăng ký tích hợp
+   + Footer: Thông tin liên hệ & links
+   + Nhúng font Outfit (Google Fonts) + FontAwesome Icons
+
+ - TicketBookingApi/Views/Home/Index.cshtml          [FILE MỚI]
+   + Hero Slider phim hot (tự động chạy, 6 giây/slide)
+   + Tabs chuyển đổi "Phim Đang Chiếu" / "Phim Sắp Chiếu"
+   + Grid 4 cột hiển thị danh sách phim
+   + Tải dữ liệu AJAX từ /api/movies
+
+ - TicketBookingApi/Views/Home/Details.cshtml        [FILE MỚI]
+   + Blurred backdrop poster làm nền header nghệ thuật
+   + Nhúng Trailer YouTube tỉ lệ 16:9 responsive
+   + Danh sách Đạo diễn + Dàn diễn viên (kèm ảnh đại diện tròn)
+   + Khu vực Đánh giá & Bình luận:
+     - Đọc toàn bộ đánh giá từ API
+     - Kiểm tra quyền bình luận (đã xem phim chưa)
+     - Chọn điểm sao 1-10 (hover highlight)
+     - Gửi/Cập nhật đánh giá qua JWT API
+
+ - TicketBookingApi/Views/Home/Search.cshtml         [FILE MỚI]
+   + Bộ lọc tìm kiếm: tên phim + thể loại (dropdown) + hashtag
+   + Dropdown thể loại tải động từ database
+   + Hỗ trợ click hashtag trên card để tìm kiếm nhanh
+   + Hiển thị kết quả dạng grid 4 cột
+
+ - TicketBookingApi/Views/Home/Booking.cshtml        [FILE MỚI]
+   + Hiển thị 7 ngày tiếp theo dạng slider ngang (Date Selector)
+   + Load suất chiếu theo ngày được chọn
+   + Gom nhóm suất chiếu theo từng Rạp phim
+   + Highlight các giờ đã qua (disabled)
+   + Kiểm tra đăng nhập trước khi chọn suất chiếu
+
+ - TicketBookingApi/Views/Home/Styleguide.cshtml     [ĐÃ XÓA]
+   + Trang này chỉ phục vụ mục đích phát triển nội bộ
+   + Đã xóa hoàn toàn khỏi hệ thống (không cần thiết cho người dùng)
+
+[D] STATIC ASSETS
+ - TicketBookingApi/wwwroot/css/design-system.css   [FILE MỚI]
+   Hệ thống CSS theo Dark Cinema Mode từ form-ui.md:
+   + CSS Variables: bảng màu, spacing, radius, transition
+   + Buttons: btn-primary, btn-secondary, btn-outline
+   + Inputs: form-input, form-select, search-box
+   + Movie Cards: hover animation, poster zoom, age badges
+   + Hero Slider: fade animation, gradient overlay
+   + Tabs: active indicator animation
+   + Navbar: glassmorphism, sticky header
+   + Modals: blur backdrop, scale animation
+   + Movie Details: blurred backdrop hero, video container 16:9
+   + Cast/Crew: avatar tròn, person-card
+   + Reviews: star selector, review items
+   + Booking: date-selector scroll, theater-showtimes-box, btn-time
+   + Footer: 3-column grid layout
+   + Responsive: breakpoints 992px, 768px, 480px
+
+3. CÁC TÍNH NĂNG ĐÃ TÍCH HỢP
+-------------------------------
+ [x] Trang chủ: Slider phim hot + Tabs phim đang/sắp chiếu
+ [x] Chi tiết phim: Thông tin + Trailer + Diễn viên + Đạo diễn + Hashtags
+ [x] Đánh giá & Bình luận: Đọc + Gửi đánh giá (1-10 sao)
+ [x] Tìm kiếm: Lọc theo tên phim / thể loại / hashtag
+ [x] Booking: Chọn ngày + Hiển thị lịch chiếu theo rạp
+
+4. CÔNG NGHỆ SỬ DỤNG
+----------------------
+ - ASP.NET Core 8.0 MVC (Razor Views - .cshtml)
+ - Vanilla CSS (biến CSS Custom Properties)
+ - Vanilla JavaScript (fetch API, AJAX, localStorage)
+ - Font: Outfit (Google Fonts)
+ - Icons: FontAwesome 6.4.0
+ - Backend: Các API có sẵn (/api/movies, /api/bookings, /api/reviews/...)
+ - Auth: JWT Bearer Token (lưu vào localStorage)
+
+5. CÁCH CHẠY VÀ KIỂM TRA
+--------------------------
+ Bước 1: Mở terminal tại thư mục TicketBookingApi
+ Bước 2: Chạy lệnh: dotnet run
+ Bước 3: Mở trình duyệt và truy cập:
+   - Trang chủ:      http://localhost:5175/
+   - Tìm kiếm phim:  http://localhost:5175/Home/Search
+   - Chi tiết phim:  http://localhost:5175/Home/Details/{maphim}
+   - Đặt vé:         http://localhost:5175/Home/Booking?movieId={maphim}
+   - Swagger API:    http://localhost:5175/swagger
+
+ Lưu ý port:
+   - dotnet run (profile http)  -> http://localhost:5175/
+   - dotnet run --launch-profile https -> https://localhost:7100/
+   - Visual Studio -> chọn profile http hoặc https trên thanh công cụ
+
+6. LỊCH SỬ THAY ĐỔI (CHANGELOG)
+----------------------------------
+ [22/06/2026 - Lần 1] Tạo toàn bộ hạ tầng MVC và các Views chính
+ [22/06/2026 - Lần 2] Sửa lỗi Swagger chiếm URL root:
+   - Đổi RoutePrefix = string.Empty -> RoutePrefix = "swagger"
+   - Swagger chuyển sang /swagger, trang chủ nằm ở /
+ [22/06/2026 - Lần 3] Sửa lỗi IIS Express tự thêm /index.html:
+   - Đổi launchUrl = "" trong launchSettings.json
+   - Thêm middleware redirect /index.html -> / trong Program.cs
+ [22/06/2026 - Lần 4] Xóa trang Styleguide khỏi giao diện người dùng:
+   - Xóa Views/Home/Styleguide.cshtml
+   - Xóa Action Styleguide() trong HomeController.cs
+   - Xóa link Styleguide khỏi Navbar và Footer trong _Layout.cshtml
+
+7. GHI CHÚ QUAN TRỌNG
+-----------------------
+ - Tất cả code API cũ (Controllers, Services, Models, Hubs...) giữ nguyên
+ - Chỉ sửa duy nhất 1 dòng logic trong Program.cs:
+     AddControllers() -> AddControllersWithViews()
+   và thêm các dòng cấu hình middleware MVC
+ - Swagger vẫn hoạt động bình thường tại /swagger
+ - Hệ thống vẫn tương thích ngược với mọi API endpoint cũ
+
+================================================================
+                    Nhóm 7 - TicketBooking Project
+================================================================
