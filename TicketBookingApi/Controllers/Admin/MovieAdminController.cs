@@ -1,3 +1,4 @@
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
@@ -13,6 +14,7 @@ namespace TicketBookingApi.Controllers.Admin
 {
     [Route("api/admin/movies")]
     [ApiController]
+    [Authorize(Policy = "RequireAdmin")]
     public class MovieAdminController : ControllerBase
     {
         private readonly ApplicationDbContext _context;
