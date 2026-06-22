@@ -84,6 +84,7 @@ namespace TicketBookingApi.Controllers
         public async Task<IActionResult> GetSeats(string showtimeId)
         {
             var showtime = await _context.Lichchieus
+                .Include(l => l.MaphimNavigation)
                 .Include(l => l.MaphongNavigation)
                     .ThenInclude(p => p!.Ghengois)
                 .Include(l => l.MaphongNavigation!.MarapphimNavigation)
@@ -92,26 +93,25 @@ namespace TicketBookingApi.Controllers
             if (showtime == null)
                 return NotFound(new { status = "error", message = "Không tìm thấy lịch chiếu" });
 
-            // Ghế đã đặt trong DB (active hoặc pending đang đợi thanh toán)
+            // 1. Ghế đã bán hoặc đang chờ thanh toán (màu xám/đã bán)
             var bookedSeats = await _context.Vexemphims
                 .Where(v => v.Malichchieu == showtimeId && (v.Trangthai == "active" || v.Trangthai == "pending"))
                 .Select(v => v.Maghe)
                 .ToListAsync();
 
-            // Cộng thêm ghế đang bị khóa tạm thời qua SignalR
+            // 2. Ghế đang bị người khác click chọn (màu cam/giữ ghế tạm)
             var tempLockedSeats = _lockService.GetLockedSeatsForShowtime(showtimeId);
-            bookedSeats.AddRange(tempLockedSeats);
-            bookedSeats = bookedSeats.Distinct().ToList();
 
             var data = new
             {
-                showtime.Malichchieu,
-                Ngaychieu = showtime.Ngaychieu.ToString("yyyy-MM-dd"),
-                Giochieu = showtime.Giochieu.ToString("HH:mm"),
-                showtime.Giave,
-                Phong = showtime.MaphongNavigation?.Tenphong,
-                Rap = showtime.MaphongNavigation?.MarapphimNavigation?.Tenrapphim,
-                Ghe = showtime.MaphongNavigation?.Ghengois.Select(g => new
+                showtime?.Malichchieu,
+                tenphim = showtime.MaphimNavigation?.Tenphim,
+                Ngaychieu = showtime?.Ngaychieu.ToString("yyyy-MM-dd"),
+                Giochieu = showtime?.Giochieu.ToString("HH:mm"),
+                showtime?.Giave,
+                Phong = showtime?.MaphongNavigation?.Tenphong,
+                Rap = showtime?.MaphongNavigation?.MarapphimNavigation?.Tenrapphim,
+                Ghe = showtime?.MaphongNavigation?.Ghengois.Select(g => new
                 {
                     g.Maghe,
                     g.Mahangghe,
@@ -119,7 +119,8 @@ namespace TicketBookingApi.Controllers
                     g.Loaighe,
                     g.Hesogiaghe,
                     GiaVe = (int)(showtime.Giave * g.Hesogiaghe),
-                    IsBooked = bookedSeats.Contains(g.Maghe)
+                    Status = bookedSeats.Contains(g.Maghe) ? "booked" : 
+                             tempLockedSeats.Contains(g.Maghe) ? "locked" : "available"
                 }).OrderBy(g => g.Mahangghe).ThenBy(g => g.Soghe)
             };
 
@@ -340,15 +341,42 @@ namespace TicketBookingApi.Controllers
             });
         }
 
-        // GET /api/bookings/status/{id}
         [HttpGet("status/{id}")]
         public async Task<IActionResult> CheckBookingStatus(string id)
         {
-            var order = await _context.Dondatves.FirstOrDefaultAsync(d => d.Madondatve == id);
+            var order = await _context.Dondatves
+                .Include(d => d.Vexemphims)
+                    .ThenInclude(v => v.MalichchieuNavigation)
+                        .ThenInclude(l => l.MaphimNavigation)
+                .Include(d => d.Vexemphims)
+                    .ThenInclude(v => v.MalichchieuNavigation)
+                        .ThenInclude(l => l.MaphongNavigation)
+                            .ThenInclude(p => p.MarapphimNavigation)
+                .FirstOrDefaultAsync(d => d.Madondatve == id);
+
             if (order == null)
                 return NotFound(new { status = "error", message = "Không tìm thấy đơn hàng" });
 
-            return Ok(new { status = "success", data = new { order.Madondatve, order.Trangthai, order.Tongtien } });
+            var firstTicket = order.Vexemphims.FirstOrDefault();
+            var movieTitle = firstTicket?.MalichchieuNavigation?.MaphimNavigation?.Tenphim ?? "Không xác định";
+            var showtimeStr = firstTicket?.MalichchieuNavigation != null 
+                ? $"{firstTicket.MalichchieuNavigation.Ngaychieu:dd/MM} - {firstTicket.MalichchieuNavigation.Giochieu:HH:mm}"
+                : "Không xác định";
+            var roomName = firstTicket?.MalichchieuNavigation?.MaphongNavigation?.Tenphong ?? "";
+            var theaterName = firstTicket?.MalichchieuNavigation?.MaphongNavigation?.MarapphimNavigation?.Tenrapphim ?? "Ticket Cinema";
+
+            return Ok(new { 
+                status = "success", 
+                data = new { 
+                    order.Madondatve, 
+                    order.Trangthai, 
+                    order.Tongtien, 
+                    movieTitle, 
+                    showtime = showtimeStr,
+                    theater = theaterName,
+                    room = roomName
+                } 
+            });
         }
 
         // GET /api/bookings/ticket-by-qr/{qrCode}

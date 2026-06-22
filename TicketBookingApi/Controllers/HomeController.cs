@@ -43,6 +43,16 @@ namespace TicketBookingApi.Controllers
             return View();
         }
 
+        public IActionResult Seats([FromQuery] string showtimeId)
+        {
+            if (string.IsNullOrEmpty(showtimeId))
+            {
+                return RedirectToAction(nameof(Index));
+            }
+            ViewData["ShowtimeId"] = showtimeId;
+            return View();
+        }
+
 
         // Custom API endpoint to support search by Name, Genre, or Hashtag
         // Built inside our HomeController to not modify any existing backend files
@@ -101,6 +111,15 @@ namespace TicketBookingApi.Controllers
                 .Distinct()
                 .ToListAsync();
             return Json(new { status = "success", data = genres });
+        }
+        public IActionResult Success([FromQuery] string orderId)
+        {
+            if (string.IsNullOrEmpty(orderId))
+            {
+                return RedirectToAction(nameof(Index));
+            }
+            ViewData["OrderId"] = orderId;
+            return View();
         }
     }
 }

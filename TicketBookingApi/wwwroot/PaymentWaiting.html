@@ -219,11 +219,11 @@
                 </div>
                 <div class="info-row">
                     <span class="info-label">Suất chiếu</span>
-                    <span class="info-value">Lật Mặt 7 - 19:30</span>
+                    <span class="info-value" id="order-showtime">Đang tải...</span>
                 </div>
                 <div class="info-row">
                     <span class="info-label">Tổng cộng</span>
-                    <span class="info-value price" id="total-price">250.000đ</span>
+                    <span class="info-value price" id="total-price">...₫</span>
                 </div>
             </div>
 
@@ -270,14 +270,20 @@
                 const response = await fetch(`/api/bookings/status/${orderId}`);
                 const result = await response.json();
                 
-                if (response.ok && result.data.trangthai === "active") {
-                    clearInterval(checkStatus);
-                    clearInterval(timer);
-                    window.location.href = `/Home/Success?orderId=${orderId}`;
-                } else if (result.data.trangthai === "canceled") {
-                    clearInterval(checkStatus);
-                    alert("Đơn hàng đã bị hủy.");
-                    window.location.href = '/';
+                if (response.ok && result.status === 'success') {
+                    // Cập nhật thông tin UI
+                    document.getElementById('total-price').textContent = new Intl.NumberFormat('vi-VN').format(result.data.tongtien) + "₫";
+                    document.getElementById('order-showtime').textContent = `${result.data.movieTitle} - ${result.data.showtime}`;
+
+                    if (result.data.trangthai === "active") {
+                        clearInterval(checkStatus);
+                        clearInterval(timer);
+                        window.location.href = `/Home/Success?orderId=${orderId}`;
+                    } else if (result.data.trangthai === "cancelled" || result.data.trangthai === "canceled") {
+                        clearInterval(checkStatus);
+                        alert("Đơn hàng đã bị hủy hoặc hết hạn.");
+                        window.location.href = '/';
+                    }
                 }
             } catch (err) {
                 console.error("Lỗi check status:", err);
@@ -313,9 +319,19 @@
             }
         }
 
-        function cancelBooking() {
-            if(confirm("Bạn có chắc muốn hủy đơn hàng này? Ghế sẽ bị mất.")) {
-                window.location.href = '/';
+        async function cancelBooking() {
+            if(confirm("Bạn có chắc muốn hủy đơn hàng này? Ghế sẽ được giải phóng.")) {
+                const token = localStorage.getItem('jwt_token');
+                try {
+                    await fetch(`/api/bookings/${orderId}/cancel`, {
+                        method: 'POST',
+                        headers: { 'Authorization': `Bearer ${token}` }
+                    });
+                    window.location.href = '/';
+                } catch (err) {
+                    console.error(err);
+                    window.location.href = '/';
+                }
             }
         }
     </script>

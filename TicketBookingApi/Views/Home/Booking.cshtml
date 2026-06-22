@@ -224,10 +224,8 @@
                 return;
             }
             
-            // Ở luồng CSDL MVC thực tế: khi chọn suất chiếu, client sẽ được chuyển hướng sang trang chọn ghế
-            // Vì yêu cầu chỉ dừng lại ở bước "Chọn Suất chiếu: Hiển thị lịch chiếu theo rạp và thời gian"
-            // Nên chúng ta mô phỏng một thông báo xác nhận thành công sang bước chọn ghế cực kỳ xịn sò
-            alert(`Bạn đã chọn Suất chiếu lúc [${timeStr}] ngày [${selectedDateStr}] tại rạp [${rapName}].\n\nHệ thống sẽ kết nối qua SignalR Hub (seathub) để thực hiện khóa ghế và đặt chỗ ở bước tiếp theo!`);
+            // Chuyển hướng sang trang chọn ghế với showtimeId
+            window.location.href = `/Home/Seats?showtimeId=${showtimeId}`;
         }
     </script>
 }

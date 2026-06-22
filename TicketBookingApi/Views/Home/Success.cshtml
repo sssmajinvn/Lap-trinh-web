@@ -1,0 +1,114 @@
+@{
+    var orderId = ViewData["OrderId"] as string;
+    ViewData["Title"] = "Đặt vé thành công";
+}
+
+<div class="container" style="padding: 4rem 1rem; text-align: center; min-height: 80vh;">
+    <!-- 🎊 SUCCESS ANIMATION ICON -->
+    <div style="margin-bottom: 2rem;">
+        <div style="width: 100px; height: 100px; background: rgba(46, 213, 115, 0.1); border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto; border: 2px solid #2ed573;">
+            <i class="fa-solid fa-check fa-4x" style="color: #2ed573;"></i>
+        </div>
+    </div>
+
+    <h1 style="font-size: 2.5rem; margin-bottom: 0.5rem;">Thanh Toán Thành Công!</h1>
+    <p style="color: var(--text-muted); font-size: 1.1rem; margin-bottom: 3rem;">Cảm ơn bạn đã tin tưởng dịch vụ của Ticket Cinema. Vé của bạn đã được sẵn sàng!</p>
+
+    <!-- 🎫 E-TICKET CARD -->
+    <div id="ticket-info-card" style="max-width: 500px; margin: 0 auto; background: var(--glass-bg); border: 1px solid var(--glass-border); border-radius: var(--radius-md); padding: 2rem; position: relative; overflow: hidden; backdrop-filter: blur(12px);">
+        <!-- Ticket perforation effect -->
+        <div style="position: absolute; left: -10px; top: 50%; width: 20px; height: 20px; background: var(--bg-primary); border-radius: 50%;"></div>
+        <div style="position: absolute; right: -10px; top: 50%; width: 20px; height: 20px; background: var(--bg-primary); border-radius: 50%;"></div>
+        
+        <div style="text-align: left; margin-bottom: 1.5rem;">
+            <div style="display: flex; justify-content: space-between; align-items: flex-start;">
+                <div>
+                    <h3 id="order-movie-title" style="font-size: 1.4rem; margin-bottom: 4px;">...</h3>
+                    <p style="font-size: 0.9rem; color: var(--color-primary); font-weight: 700;" id="order-theater">...</p>
+                </div>
+                <div style="text-align: right;">
+                    <div style="font-size: 0.75rem; color: var(--text-muted);">Mã đơn hàng</div>
+                    <div style="font-weight: 700;">#@orderId</div>
+                </div>
+            </div>
+        </div>
+
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; text-align: left; margin-bottom: 2rem;">
+            <div>
+                <div style="font-size: 0.75rem; color: var(--text-muted);">Ngày chiếu</div>
+                <div id="order-date" style="font-weight: 600;">...</div>
+            </div>
+            <div>
+                <div style="font-size: 0.75rem; color: var(--text-muted);">Giờ chiếu</div>
+                <div id="order-time" style="font-weight: 600;">...</div>
+            </div>
+            <div>
+                <div style="font-size: 0.75rem; color: var(--text-muted);">Phòng</div>
+                <div id="order-room" style="font-weight: 600;">...</div>
+            </div>
+            <div>
+                <div style="font-size: 0.75rem; color: var(--text-muted);">Ghế</div>
+                <div id="order-seats" style="font-weight: 600; color: var(--color-primary);">...</div>
+            </div>
+        </div>
+
+        <div style="border-top: 1px dashed var(--glass-border); padding-top: 1.5rem; margin-bottom: 1rem;">
+            <div id="qr-container">
+                <img id="ticket-qr" src="" alt="QR Code" style="width: 180px; height: 180px; background: #fff; padding: 10px; border-radius: 8px;">
+                <p style="font-size: 0.8rem; color: var(--text-muted); margin-top: 0.5rem;">Đưa mã này cho nhân viên tại quầy soát vé</p>
+            </div>
+        </div>
+    </div>
+
+    <div style="margin-top: 3rem; display: flex; gap: 1rem; justify-content: center;">
+        <a href="/" class="btn btn-secondary"><i class="fa-solid fa-house"></i> Quay lại trang chủ</a>
+        <a href="#" class="btn btn-primary" onclick="window.print()"><i class="fa-solid fa-print"></i> In vé điện tử</a>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        const orderId = "@orderId";
+
+        document.addEventListener('DOMContentLoaded', function() {
+            loadOrderDetails();
+        });
+
+        async function loadOrderDetails() {
+            try {
+                // Chúng ta sẽ lấy thông tin chi tiết qua API status và sau đó là thông tin vé
+                const response = await fetch(`/api/bookings/status/${orderId}`);
+                const result = await response.json();
+
+                if (response.ok && result.status === 'success') {
+                    const order = result.data;
+                    
+                    // Thử lấy danh sách vé của đơn này để hiển thị QR
+                    // Lưu ý: Cần một API hoặc logic bổ sung để lấy chi tiết vé từ Madondatve.
+                    // Tạm thời giả lập lấy từ API phim và thông tin đơn.
+                    
+                    // Thực tế backend bạn có thể dùng BookingsController để mở rộng
+                    // Ở đây tôi sẽ load thông tin mockup từ Madondatve nếu API status trả về đủ
+                    
+                    // Cập nhật thông tin hiển thị từ API
+                    document.getElementById('order-movie-title').textContent = order.movieTitle;
+                    document.getElementById('order-theater').textContent = order.theater;
+                    
+                    if (order.showtime && order.showtime.includes(' - ')) {
+                        document.getElementById('order-date').textContent = order.showtime.split(' - ')[0];
+                        document.getElementById('order-time').textContent = order.showtime.split(' - ')[1];
+                    }
+                    
+                    document.getElementById('order-room').textContent = order.room || "Phòng Chiếu";
+                    document.getElementById('order-seats').textContent = "Đã xác nhận";
+
+                    // Cập nhật QR (Sử dụng mã đơn hàng làm nội dung QR)
+                    const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=ticket_${orderId}`;
+                    document.getElementById('ticket-qr').src = qrUrl;
+                }
+            } catch (err) {
+                console.error(err);
+            }
+        }
+    </script>
+}

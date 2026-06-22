@@ -252,6 +252,7 @@ h1, h2, h3, h4, h5, h6 {
     line-height: 1.4;
     display: -webkit-box;
     -webkit-line-clamp: 2;
+    line-clamp: 2;
     -webkit-box-orient: vertical;
     overflow: hidden;
     height: 3.2em;
@@ -362,6 +363,7 @@ h1, h2, h3, h4, h5, h6 {
     font-size: 1.05rem;
     display: -webkit-box;
     -webkit-line-clamp: 3;
+    line-clamp: 3;
     -webkit-box-orient: vertical;
     overflow: hidden;
 }
@@ -995,4 +997,343 @@ h1, h2, h3, h4, h5, h6 {
     padding-top: var(--space-md);
     text-align: center;
     font-size: 0.85rem;
+}
+
+/* 🛋️ 8. Seat Selection Page Styles */
+.seat-selection-wrapper {
+    display: grid;
+    grid-template-columns: 1fr 350px;
+    gap: var(--space-xl);
+    padding: var(--space-xl) 0;
+}
+
+@media (max-width: 992px) {
+    .seat-selection-wrapper {
+        grid-template-columns: 1fr;
+    }
+}
+
+.seat-map-section {
+    background-color: var(--glass-bg);
+    border: 1px solid var(--glass-border);
+    border-radius: var(--radius-md);
+    padding: var(--space-xl);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    backdrop-filter: blur(12px);
+}
+
+.screen-container {
+    width: 80%;
+    margin: 0 auto var(--space-xl) auto;
+    text-align: center;
+}
+
+.screen-visual {
+    height: 8px;
+    width: 100%;
+    background: var(--color-primary);
+    border-radius: 50% 50% 0 0;
+    box-shadow: 0 -4px 15px var(--color-primary);
+    margin-bottom: 12px;
+}
+
+.screen-text {
+    font-size: 0.85rem;
+    font-weight: 700;
+    letter-spacing: 6px;
+    color: var(--text-muted);
+}
+
+.seat-grid {
+    display: grid;
+    gap: 10px;
+    margin-bottom: var(--space-xl);
+    justify-content: center;
+}
+
+.seat {
+    width: 34px;
+    height: 32px;
+    background-color: #3e4b5e;
+    border-radius: 6px 6px 4px 4px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.7rem;
+    font-weight: 700;
+    color: rgba(255, 255, 255, 0.4);
+    transition: var(--transition-smooth);
+    position: relative;
+}
+
+.seat::after {
+    content: '';
+    position: absolute;
+    bottom: -2px;
+    left: 4px;
+    right: 4px;
+    height: 4px;
+    background: rgba(0,0,0,0.3);
+    border-radius: 2px;
+}
+
+.seat.available:hover {
+    background-color: var(--color-primary);
+    color: var(--text-light);
+    transform: scale(1.1);
+}
+
+.seat.selected {
+    background-color: var(--color-primary) !important;
+    color: var(--text-light) !important;
+    box-shadow: 0 0 12px var(--color-primary);
+    transform: scale(1.1);
+}
+
+.seat.booked {
+    background-color: #1a2332 !important;
+    color: transparent !important;
+    cursor: not-allowed;
+    opacity: 0.4;
+}
+
+.seat.booked::before {
+    content: '×';
+    color: var(--text-muted);
+    font-size: 1.2rem;
+    position: absolute;
+}
+
+.seat.vip {
+    background-color: #f1c40f;
+    color: #000;
+}
+.seat.vip:hover {
+    background-color: #f39c12;
+}
+
+.seat.locked {
+    background-color: #ff9f43;
+    opacity: 0.6;
+    cursor: not-allowed;
+}
+
+.seat-legend {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-lg);
+    justify-content: center;
+    margin-top: var(--space-md);
+}
+
+.legend-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 0.85rem;
+    color: var(--text-muted);
+}
+
+.legend-seat {
+    width: 20px;
+    height: 18px;
+    border-radius: 3px;
+}
+
+/* Sidebar Summary */
+.booking-summary-sidebar {
+    background-color: var(--glass-bg);
+    border: 1px solid var(--glass-border);
+    border-radius: var(--radius-md);
+    padding: var(--space-lg);
+    height: fit-content;
+    position: sticky;
+    top: 96px;
+    backdrop-filter: blur(12px);
+}
+
+.summary-movie-info {
+    border-bottom: 1px solid var(--glass-border);
+    padding-bottom: var(--space-md);
+    margin-bottom: var(--space-md);
+}
+
+.summary-title {
+    font-size: 1.25rem;
+    margin-bottom: 4px;
+}
+
+.summary-meta {
+    font-size: 0.85rem;
+    color: var(--text-muted);
+}
+
+.summary-selection-row {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 12px;
+    font-size: 0.95rem;
+}
+
+.summary-total {
+    border-top: 1.5px dashed var(--glass-border);
+    padding-top: var(--space-md);
+    margin-top: var(--space-md);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.total-price {
+    font-size: 1.6rem;
+    font-weight: 800;
+    color: var(--color-primary);
+}
+
+.selected-seats-badges {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    margin-top: 8px;
+}
+
+.badge-seat {
+    background-color: var(--color-primary);
+    color: #fff;
+    padding: 2px 10px;
+    border-radius: 4px;
+    font-size: 0.85rem;
+    font-weight: 600;
+}
+
+.timer-box {
+    background: rgba(229, 9, 20, 0.1);
+    border: 1px solid rgba(229, 9, 20, 0.2);
+    border-radius: var(--radius-sm);
+    padding: 10px;
+    text-align: center;
+    margin-bottom: var(--space-md);
+    color: var(--color-primary);
+    font-weight: 700;
+    font-size: 1.1rem;
+}
+
+/* 🍿 9. Concessions & Combo Styles */
+.concessions-section {
+    margin-top: var(--space-xl);
+    width: 100%;
+}
+
+.concessions-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: var(--space-md);
+    margin-top: var(--space-md);
+}
+
+.concession-card {
+    background: var(--bg-secondary);
+    border: 1px solid var(--glass-border);
+    border-radius: var(--radius-md);
+    padding: var(--space-md);
+    display: flex;
+    gap: var(--space-md);
+    align-items: center;
+    transition: var(--transition-smooth);
+}
+
+.concession-card:hover {
+    border-color: rgba(229, 9, 20, 0.4);
+    background: rgba(255, 255, 255, 0.03);
+}
+
+.concession-img {
+    width: 70px;
+    height: 70px;
+    border-radius: var(--radius-sm);
+    object-fit: cover;
+}
+
+.concession-info {
+    flex-grow: 1;
+}
+
+.concession-name {
+    font-weight: 600;
+    font-size: 0.95rem;
+    margin-bottom: 2px;
+}
+
+.concession-price {
+    color: var(--color-accent);
+    font-weight: 700;
+    font-size: 0.9rem;
+}
+
+.quantity-control {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    background: rgba(0,0,0,0.2);
+    border-radius: 20px;
+    padding: 4px 10px;
+}
+
+.qty-btn {
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    border: none;
+    background: var(--glass-border);
+    color: var(--text-light);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    font-size: 0.8rem;
+}
+
+.qty-btn:hover {
+    background: var(--color-primary);
+}
+
+.qty-val {
+    font-weight: 700;
+    min-width: 20px;
+    text-align: center;
+}
+
+.voucher-box {
+    margin-top: var(--space-md);
+    border-top: 1px solid var(--glass-border);
+    padding-top: var(--space-md);
+}
+
+.voucher-input-wrapper {
+    display: flex;
+    gap: 8px;
+    margin-top: 8px;
+}
+
+.voucher-input {
+    flex-grow: 1;
+    background: var(--bg-primary);
+    border: 1px solid var(--glass-border);
+    border-radius: var(--radius-sm);
+    padding: 8px 12px;
+    color: #fff;
+    font-size: 0.85rem;
+}
+
+.voucher-input:focus {
+    border-color: var(--color-primary);
+    outline: none;
+}
+
+.btn-apply-voucher {
+    padding: 0 16px;
+    font-size: 0.8rem;
 }
