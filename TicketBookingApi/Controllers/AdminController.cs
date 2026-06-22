@@ -17,29 +17,6 @@ namespace TicketBookingApi.Controllers
             _context = context;
         }
 
-        [HttpGet("dashboard/stats")]
-        public async Task<IActionResult> GetDashboardStats()
-        {
-            var totalUsers = await _context.Thongtintaikhoans.CountAsync();
-            var totalMovies = await _context.Phims.CountAsync();
-            var totalBookings = await _context.Dondatves.CountAsync();
-            var totalRevenue = await _context.Dondatves
-                .Where(d => d.Trangthai == "paid")
-                .SumAsync(d => d.Tongtien);
-
-            return Ok(new
-            {
-                status = "success",
-                data = new
-                {
-                    totalUsers,
-                    totalMovies,
-                    totalBookings,
-                    totalRevenue
-                }
-            });
-        }
-
         [HttpPost("movies")]
         public async Task<IActionResult> CreateMovie([FromBody] Phim movie)
         {
