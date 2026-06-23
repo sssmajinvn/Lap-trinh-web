@@ -54,6 +54,12 @@
                 const response = await fetch('/api/admin/vouchers', {
                     headers: { 'Authorization': `Bearer ${token}` }
                 });
+                
+                if (!response.ok) {
+                    if (response.status === 401) throw new Error("Phiên đăng nhập hết hạn.");
+                    throw new Error(`Lỗi (${response.status})`);
+                }
+
                 const result = await response.json();
 
                 if (response.ok && result.status === 'success') {

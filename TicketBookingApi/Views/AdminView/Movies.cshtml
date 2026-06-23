@@ -154,6 +154,7 @@
             try {
                 // Sử dụng api/movies chung đã có sẵn
                 const response = await fetch('/api/movies');
+                if (!response.ok) throw new Error(`Lỗi (${response.status}) - Không thể kết nối API.`);
                 const result = await response.json();
 
                 if (response.ok && result.status === 'success') {
@@ -255,6 +256,12 @@
                 const response = await fetch(`/api/admin/movies/search?query=${encodeURIComponent(query)}`, {
                     headers: { 'Authorization': `Bearer ${token}` }
                 });
+
+                if (!response.ok) {
+                    if (response.status === 401) throw new Error("Phiên đăng nhập hết hạn.");
+                    throw new Error(`Lỗi kết nối (${response.status})`);
+                }
+
                 const result = await response.json();
 
                 if (response.ok && result.status === 'success') {
@@ -359,9 +366,8 @@
             };
 
             try {
-                // Gọi API custom nội bộ trong AdminViewController
-                const response = await fetch(`/Admin/api/movies/update/${maphim}`, {
-                    method: 'POST',
+                const response = await fetch(`/api/admin/movies/${maphim}`, {
+                    method: 'PUT',
                     headers: {
                         'Content-Type': 'application/json',
                         'Authorization': `Bearer ${token}`
@@ -391,9 +397,8 @@
 
             const token = localStorage.getItem('admin_token');
             try {
-                // Gọi API custom nội bộ trong AdminViewController
-                const response = await fetch(`/Admin/api/movies/delete/${maphim}`, {
-                    method: 'POST',
+                const response = await fetch(`/api/admin/movies/${maphim}`, {
+                    method: 'DELETE',
                     headers: { 'Authorization': `Bearer ${token}` }
                 });
 

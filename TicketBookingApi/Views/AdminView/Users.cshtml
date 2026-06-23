@@ -89,6 +89,13 @@
                 const response = await fetch('/api/admin/users', {
                     headers: { 'Authorization': `Bearer ${token}` }
                 });
+
+                if (!response.ok) {
+                    if (response.status === 401) throw new Error("Phiên đăng nhập hết hạn hoặc bạn không có quyền Admin.");
+                    if (response.status === 403) throw new Error("Tài khoản của bạn không được phép truy cập module này.");
+                    throw new Error(`Lỗi máy chủ (${response.status}) - Không thể tải danh sách người dùng.`);
+                }
+
                 const result = await response.json();
 
                 if (response.ok && result.status === 'success') {
@@ -116,8 +123,8 @@
                                     <td>${new Date(u.ngaytao).toLocaleDateString('vi-VN')}</td>
                                     <td><span class="status-pills ${u.trangthai === 'active' ? 'status-active' : 'status-inactive'}">${u.trangthai}</span></td>
                                     <td>
-                                        <button class="btn btn-secondary btn-sm" onclick="viewUserDetail('${u.mataikhoan}')"><i class="fa-solid fa-eye"></i></button>
-                                        <button class="btn btn-outline btn-sm text-danger" onclick="lockUser('${u.mataikhoan}', '${u.trangthai}')"><i class="fa-solid ${u.trangthai === 'active' ? 'fa-lock' : 'fa-lock-open'}"></i></button>
+                                        <button class="btn btn-secondary btn-sm" onclick="viewUserDetail('${u.id}')"><i class="fa-solid fa-eye"></i></button>
+                                        <button class="btn btn-outline btn-sm text-danger" onclick="lockUser('${u.id}', '${u.trangthai}')"><i class="fa-solid ${u.trangthai === 'active' ? 'fa-lock' : 'fa-lock-open'}"></i></button>
                                     </td>
                                 </tr>
                             `;
@@ -142,17 +149,27 @@
             }
         }
 
-        async function lockUser(username, currentStatus) {
+        async function lockUser(userId, currentStatus) {
             const newStatus = currentStatus === 'active' ? 'locked' : 'active';
-            if (confirm(`Bạn có muốn ${newStatus === 'active' ? 'mở khóa' : 'khóa'} tài khoản ${username}?`)) {
+            if (confirm(`Bạn có muốn ${newStatus === 'active' ? 'mở khóa' : 'khóa'} tài khoản này?`)) {
                 const token = localStorage.getItem('admin_token');
-                const res = await fetch(`/api/admin/users/status`, {
-                    method: 'PATCH',
-                    headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ maTaiKhoan: username, trangThai: newStatus })
-                });
-                if (res.ok) loadUsers();
-                else alert("Lỗi khi cập nhật trạng thái");
+                try {
+                    const res = await fetch(`/api/admin/users/${userId}/status`, {
+                        method: 'PUT',
+                        headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ trangthai: newStatus })
+                    });
+                    
+                    if (res.ok) {
+                        alert("Cập nhật thành công!");
+                        loadUsers();
+                    } else {
+                        const err = await res.json();
+                        alert("Lỗi: " + (err.message || "Không thể cập nhật trạng thái"));
+                    }
+                } catch (e) {
+                    alert("Lỗi kết nối: " + e.message);
+                }
             }
         }
 

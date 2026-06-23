@@ -178,6 +178,12 @@
             const res = await fetch('/api/admin/showtimes', {
                 headers: { 'Authorization': `Bearer ${token}` }
             });
+
+            if (!res.ok) {
+                if (res.status === 401) throw new Error("Chưa đăng nhập hoặc session hết hạn.");
+                throw new Error(`Server returned ${res.status}`);
+            }
+
             const data = await res.json();
             // Backend trả về mảng trực tiếp hoặc wrapper {status, data}
             allShowtimes = Array.isArray(data) ? data : (data.data || []);
@@ -428,8 +434,8 @@
         };
 
         try {
-            const res = await fetch(`/Admin/api/showtimes/update/${malichchieu}`, {
-                method: 'POST',
+            const res = await fetch(`/api/admin/showtimes/${malichchieu}`, {
+                method: 'PUT',
                 headers: {
                     'Content-Type': 'application/json',
                     'Authorization': `Bearer ${token}`
@@ -458,8 +464,8 @@
 
         const token = localStorage.getItem('admin_token');
         try {
-            const res = await fetch(`/Admin/api/showtimes/delete/${malichchieu}`, {
-                method: 'POST',
+            const res = await fetch(`/api/admin/showtimes/${malichchieu}`, {
+                method: 'DELETE',
                 headers: { 'Authorization': `Bearer ${token}` }
             });
 

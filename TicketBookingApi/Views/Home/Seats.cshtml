@@ -80,14 +80,23 @@
                 <!-- Selected combos will appear here -->
             </div>
 
-            <!-- 🎫 VOUCHER SECTION -->
+            <!-- 🎫 VOUCHER & RANK SECTION -->
             <div class="voucher-box">
-                <div class="summary-selection-row">
-                    <span>Mã giảm giá:</span>
+                <!-- Phân tích giá vé -->
+                <div class="summary-selection-row" id="seat-price-row" style="display:none; margin-bottom: 4px;">
+                    <span style="font-size: 0.85rem; color: var(--text-muted);">Giá vé gốc:</span>
+                    <span id="seat-price-text" style="font-size: 0.85rem;">0₫</span>
+                </div>
+                <div class="summary-selection-row" id="rank-discount-row" style="display: none; margin-bottom: 4px;">
+                    <span id="rank-name-label" style="font-size: 0.85rem; color: #ff9f43;">Chiết khấu hạng:</span>
+                    <span id="rank-discount-text" style="color: #ff9f43; font-weight: 700;">-0₫</span>
+                </div>
+                <div class="summary-selection-row" style="margin-bottom: 8px;">
+                    <span style="font-size: 0.85rem;">Mã giảm giá:</span>
                     <span id="voucher-discount-text" style="color: #2ed573; font-weight: 700;">-0₫</span>
                 </div>
                 <div class="voucher-input-wrapper">
-                    <input type="text" id="voucher-code-input" class="voucher-input" placeholder="Nhập mã ưu đãi...">
+                    <input type="text" id="voucher-code-input" class="voucher-input" placeholder="Nhập mã ưu đãi..." onkeydown="if(event.key==='Enter') applyVoucher()" style="text-transform:uppercase">
                     <button class="btn btn-secondary btn-apply-voucher" onclick="applyVoucher()">ÁP DỤNG</button>
                 </div>
                 <div id="voucher-msg" style="font-size: 0.75rem; margin-top: 4px;"></div>
@@ -118,15 +127,58 @@
         const showtimeId = "@showtimeId";
         let selectedSeats = []; // Array of seat objects {id, code, price}
         let selectedConcessions = []; // Array of {id, type, price, quantity, name}
-        let appliedVoucher = null; // {code, discountAmount}
+        let appliedVoucher = null; // {code, discountAmount, voucherName}
+        let userRank = { name: "Thường", rate: 0, apiRank: "BRONZE" }; // {name, rate, apiRank}
         let seatData = []; // Full list from API
         let hubConnection = null;
 
         document.addEventListener('DOMContentLoaded', function() {
             loadSeats();
             loadConcessions();
+            loadUserRank();
             setupSignalR();
         });
+
+        // 0. Tải thông tin hạng thành viên
+        async function loadUserRank() {
+            const token = localStorage.getItem('jwt_token');
+            if (!token) return;
+            try {
+                // Đúng route: /api/users/profile (không phải /api/account/profile)
+                const response = await fetch('/api/users/profile', {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+                const result = await response.json();
+                if (response.ok && result.data) {
+                    // Field đúng từ UsersController: hangThanhVien (camelCase sau serialization)
+                    const rankRaw = result.data.hangThanhVien || result.data.rank || "BRONZE";
+                    const rankUpper = rankRaw.toUpperCase();
+
+                    let rate = 0;
+                    if (rankUpper === "DIAMOND") rate = 0.18;
+                    else if (rankUpper === "GOLD") rate = 0.10;
+                    else if (rankUpper === "SILVER") rate = 0.05;
+
+                    const rankNameMap = {
+                        DIAMOND: "Kim Cương", GOLD: "Vàng",
+                        SILVER: "Bạc", BRONZE: "Đồng", MEMBER: "Đồng"
+                    };
+                    const rankNameVi = rankNameMap[rankUpper] || rankRaw;
+
+                    userRank = { name: rankNameVi, rate: rate, apiRank: rankUpper };
+
+                    if (rate > 0) {
+                        document.getElementById('rank-name-label').textContent = `Chiết khấu hạng ${rankNameVi} (${rate * 100}%):`;
+                    }
+                    // Luôn hiện hàng chiết khấu nếu có rate
+                    if (rate > 0) {
+                        document.getElementById('rank-discount-row').style.display = 'flex';
+                    }
+                }
+            } catch (err) {
+                console.error("Lỗi load hạng:", err);
+            }
+        }
 
         // 1. Tải danh sách ghế từ API
         async function loadSeats() {
@@ -179,11 +231,12 @@
                     seatEl.id = `seat-${s.maghe}`;
                     seatEl.dataset.id = s.maghe;
                     seatEl.dataset.code = seatCode;
-                    seatEl.dataset.price = s.giaVe;
+                    const seatPrice = s.giaVe || s.GiaVe || s.giave || 0;
+                    seatEl.dataset.price = seatPrice;
                     seatEl.textContent = seatCode;
                     
                     if (status === 'available') {
-                        seatEl.onclick = () => toggleSeatSelection(s.maghe, seatCode, s.giaVe);
+                        seatEl.onclick = () => toggleSeatSelection(s.maghe, seatCode, seatPrice);
                     } else {
                         seatEl.style.pointerEvents = 'none';
                     }
@@ -290,32 +343,62 @@
             const token = localStorage.getItem('jwt_token');
 
             if (!code) {
+                // Xóa voucher khi người dùng xóa mã
                 appliedVoucher = null;
+                msgEl.textContent = '';
                 updateSummary();
                 return;
             }
 
+            if (!token) {
+                msgEl.style.color = '#ff4757';
+                msgEl.textContent = 'Vui lòng đăng nhập để sử dụng mã giảm giá.';
+                return;
+            }
+
+            msgEl.style.color = 'var(--text-muted)';
+            msgEl.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Đang kiểm tra mã...';
+
             try {
-                const response = await fetch(`/api/vouchers/check?code=${code}&totalAmount=${calculateSubtotal()}`, {
-                    headers: { 'Authorization': `Bearer ${token}` }
+                const subtotal = calculateSubtotal();
+                const response = await fetch('/api/vouchers/apply', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${token}`
+                    },
+                    body: JSON.stringify({
+                        maVoucher: code,
+                        tamTinh: subtotal,
+                        showtimeId: showtimeId
+                    })
                 });
                 const result = await response.json();
 
                 if (response.ok && result.status === 'success') {
+                    const summary = result.booking_summary;
+                    const voucherDiscount = summary.voucher_ap_dung
+                        ? Number(summary.voucher_ap_dung.sotien_duoc_giam)
+                        : 0;
+
                     appliedVoucher = {
                         code: code,
-                        discountAmount: result.data.discountAmount
+                        discountAmount: voucherDiscount,
+                        voucherName: summary.voucher_ap_dung?.ten || code
                     };
+
                     msgEl.style.color = '#2ed573';
-                    msgEl.textContent = `Áp dụng thành công: Giảm ${new Intl.NumberFormat('vi-VN').format(result.data.discountAmount)}₫`;
+                    msgEl.innerHTML = `<i class="fa-solid fa-check-circle"></i> <strong>${appliedVoucher.voucherName}</strong>: Giảm <strong>${new Intl.NumberFormat('vi-VN').format(voucherDiscount)}₫</strong>`;
                 } else {
                     appliedVoucher = null;
                     msgEl.style.color = '#ff4757';
-                    msgEl.textContent = result.message || "Mã không hợp lệ hoặc không đủ điều kiện.";
+                    msgEl.innerHTML = `<i class="fa-solid fa-times-circle"></i> ${result.message || 'Mã không hợp lệ hoặc không đủ điều kiện.'}`;
                 }
                 updateSummary();
             } catch (err) {
                 console.error(err);
+                msgEl.style.color = '#ff4757';
+                msgEl.textContent = 'Lỗi kết nối. Vui lòng thử lại.';
             }
         }
 
@@ -346,15 +429,42 @@
             }
 
             listEl.innerHTML = selectedSeats.map(s => `<span class="badge-seat">${s.code}</span>`).join('');
-            
+
             // Concessions summary
             concEl.innerHTML = selectedConcessions.map(c => `<div>${c.name} x${c.quantity}</div>`).join('');
 
-            const subtotal = calculateSubtotal();
-            const discount = appliedVoucher ? appliedVoucher.discountAmount : 0;
-            const finalTotal = Math.max(0, subtotal - discount);
+            const seatSubtotal  = selectedSeats.reduce((sum, s) => sum + s.price, 0);
+            const concSubtotal  = selectedConcessions.reduce((sum, c) => sum + c.price * c.quantity, 0);
+            const subtotal      = seatSubtotal + concSubtotal;
 
-            discountEl.textContent = `-${new Intl.NumberFormat('vi-VN').format(discount)}₫`;
+            // Chiết khấu hạng (chỉ áp dụng trên tiền ghế)
+            const rankDiscountAmount  = Math.round(seatSubtotal * userRank.rate);
+            // Chiết khấu voucher
+            const voucherDiscount     = appliedVoucher ? appliedVoucher.discountAmount : 0;
+            const finalTotal          = Math.max(0, subtotal - rankDiscountAmount - voucherDiscount);
+
+            // Hiển thị hàng giá gốc ghế
+            const seatPriceRow = document.getElementById('seat-price-row');
+            const seatPriceText = document.getElementById('seat-price-text');
+            if (seatSubtotal > 0) {
+                seatPriceRow.style.display = 'flex';
+                seatPriceText.textContent = new Intl.NumberFormat('vi-VN').format(seatSubtotal) + '₫';
+            } else {
+                seatPriceRow.style.display = 'none';
+            }
+
+            // Hiển thị chiết khấu hạng
+            if (userRank.rate > 0) {
+                document.getElementById('rank-discount-row').style.display = 'flex';
+                document.getElementById('rank-discount-text').textContent =
+                    rankDiscountAmount > 0
+                        ? `-${new Intl.NumberFormat('vi-VN').format(rankDiscountAmount)}₫`
+                        : `-${userRank.rate * 100}%`;
+            }
+
+            // Hiển thị voucher
+            discountEl.textContent = `-${new Intl.NumberFormat('vi-VN').format(voucherDiscount)}₫`;
+
             totalEl.textContent = new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(finalTotal);
             btn.disabled = false;
         }
