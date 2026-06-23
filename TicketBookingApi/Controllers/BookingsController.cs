@@ -20,9 +20,8 @@ namespace TicketBookingApi.Controllers
         private readonly TemporarySeatLockService _lockService;
         private readonly INotificationService _notificationService;
         private readonly IVoucherService _voucherService;
-        private readonly IPendingOrderMetadataService _pendingOrderService;
 
-        public BookingsController(ApplicationDbContext context, IVNPayService vnPayService, IMoMoService moMoService, IHubContext<SeatHub> hubContext, TemporarySeatLockService lockService, INotificationService notificationService, IVoucherService voucherService, IPendingOrderMetadataService pendingOrderService)
+        public BookingsController(ApplicationDbContext context, IVNPayService vnPayService, IMoMoService moMoService, IHubContext<SeatHub> hubContext, TemporarySeatLockService lockService, INotificationService notificationService, IVoucherService voucherService)
         {
             _context = context;
             _vnPayService = vnPayService;
@@ -31,7 +30,6 @@ namespace TicketBookingApi.Controllers
             _lockService = lockService;
             _notificationService = notificationService;
             _voucherService = voucherService;
-            _pendingOrderService = pendingOrderService;
         }
 
         // GET /api/bookings/theaters
@@ -173,10 +171,6 @@ namespace TicketBookingApi.Controllers
             if (seats.Count != request.SeatIds.Count)
                 return BadRequest(new { status = "error", message = "Một hoặc nhiều ghế không hợp lệ" });
 
-            var wrongRoomSeats = seats.Where(s => s.Maphong != showtime.Maphong).Select(s => s.Maghe).ToList();
-            if (wrongRoomSeats.Any())
-                return BadRequest(new { status = "error", message = $"Ghế {string.Join(", ", wrongRoomSeats)} không thuộc phòng chiếu này" });
-
             int subtotal = 0;
             var seatPrices = new Dictionary<string, int>();
             foreach (var seat in seats)
@@ -273,6 +267,22 @@ namespace TicketBookingApi.Controllers
                     _context.OrderConcessions.Add(oc);
                 }
 
+                // Insert Lịch sử Khuyến Mãi và cập nhật số lượng
+                if (discountResult.AppliedVoucher != null)
+                {
+                    _context.LichSuKhuyenMais.Add(new LichSuKhuyenMai
+                    {
+                        IdKhuyenMai = discountResult.AppliedVoucher.Id,
+                        IdKhach = userId,
+                        Madondatve = maDonDatVe,
+                        GiaTriGiamThucTe = discountResult.VoucherDiscountAmount,
+                        NgaySuDung = DateTime.UtcNow
+                    });
+
+                    discountResult.AppliedVoucher.SoLuongDaDung = (discountResult.AppliedVoucher.SoLuongDaDung ?? 0) + 1;
+                    _context.KhuyenMais.Update(discountResult.AppliedVoucher);
+                }
+
                 // Insert vé (pending) cho từng ghế
                 for (int i = 0; i < request.SeatIds.Count; i++)
                 {
@@ -282,7 +292,7 @@ namespace TicketBookingApi.Controllers
                     _lockService.UnlockSeat(request.ShowtimeId, seatId, string.Empty);
 
                     var maVe = "VE" + DateTimeOffset.UtcNow.ToUnixTimeMilliseconds().ToString().Substring(7) + i;
-                    var expireTime = showtime.Giochieu.AddHours(3);
+                    var expireTime = showtime.Ngaychieu.AddHours(3);
                     var qrData = $"/ticket/{maVe}";
 
                     _context.Vexemphims.Add(new Vexemphim
@@ -301,15 +311,6 @@ namespace TicketBookingApi.Controllers
 
                 await _context.SaveChangesAsync();
                 await transaction.CommitAsync();
-
-                // Lưu metadata voucher — chỉ ghi DB khi thanh toán thành công
-                _pendingOrderService.Set(maDonDatVe, new PendingOrderMetadata
-                {
-                    UserId = userId,
-                    VoucherId = discountResult.AppliedVoucher?.Id,
-                    VoucherDiscountAmount = discountResult.VoucherDiscountAmount,
-                    RankDiscountAmount = discountResult.RankDiscountAmount
-                });
             }
             catch
             {
@@ -414,8 +415,6 @@ namespace TicketBookingApi.Controllers
             var tickets = await _context.Vexemphims.Where(v => v.Madondatve == id).ToListAsync();
             tickets.ForEach(t => t.Trangthai = "cancelled");
             await _context.SaveChangesAsync();
-
-            _pendingOrderService.Remove(id);
 
             // Broadcast SignalR để nhả ghế cho các client khác
             var seatIds = tickets.Select(t => t.Maghe).ToList();

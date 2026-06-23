@@ -66,7 +66,7 @@ namespace TicketBookingApi.Controllers
                 .Include(p => p.Madaodiens)
                 .Include(p => p.Madienviens)
                 .Include(p => p.Mahashtags)
-                .Where(p => p.Trangthai == "now_showing" &&
+                .Where(p => (p.Trangthai == "showing" || p.Trangthai == "now_showing") &&
                             p.Mahashtags.Any(h => h.Tenhashtag.ToLower().Replace(" ", "").Contains("phimhot")))
                 .Take(5)
                 .ToListAsync();

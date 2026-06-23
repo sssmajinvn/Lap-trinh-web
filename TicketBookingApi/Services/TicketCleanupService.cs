@@ -44,7 +44,6 @@ namespace TicketBookingApi.Services
             using var scope = _serviceProvider.CreateScope();
             var context = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
             var notificationService = scope.ServiceProvider.GetRequiredService<INotificationService>();
-            var pendingOrderService = scope.ServiceProvider.GetRequiredService<IPendingOrderMetadataService>();
 
             var expirationTime = DateTime.UtcNow.AddMinutes(-5);
 
@@ -88,7 +87,6 @@ namespace TicketBookingApi.Services
 
                     if (order != null)
                     {
-                        pendingOrderService.Remove(order.Madondatve);
                         try
                         {
                             // Gửi thông báo (Maphim = null)

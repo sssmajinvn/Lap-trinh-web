@@ -1,8 +1,6 @@
-using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.SignalR;
 using Microsoft.EntityFrameworkCore;
-using System.Security.Claims;
 using System.Text.Json;
 using TicketBookingApi.Hubs;
 using TicketBookingApi.Models;
@@ -21,14 +19,12 @@ namespace TicketBookingApi.Controllers
         private readonly ILogger<PaymentsController> _logger;
         private readonly INotificationService _notificationService;
         private readonly IConfiguration _configuration;
-        private readonly IPendingOrderMetadataService _pendingOrderService;
-        private readonly IMembershipService _membershipService;
+        private readonly IPaymentStatusService _paymentStatusService;
 
         public PaymentsController(IVNPayService vnPayService, IMoMoService moMoService,
             ApplicationDbContext context, IHubContext<SeatHub> hubContext,
             ILogger<PaymentsController> logger, INotificationService notificationService,
-            IConfiguration configuration, IPendingOrderMetadataService pendingOrderService,
-            IMembershipService membershipService)
+            IConfiguration configuration, IPaymentStatusService paymentStatusService)
         {
             _vnPayService = vnPayService;
             _moMoService = moMoService;
@@ -37,14 +33,7 @@ namespace TicketBookingApi.Controllers
             _logger = logger;
             _notificationService = notificationService;
             _configuration = configuration;
-            _pendingOrderService = pendingOrderService;
-            _membershipService = membershipService;
-        }
-
-        private int? GetUserId()
-        {
-            var raw = User.FindFirstValue(ClaimTypes.NameIdentifier);
-            return int.TryParse(raw, out var id) ? id : null;
+            _paymentStatusService = paymentStatusService;
         }
 
         // ===== VNPay =====
@@ -71,7 +60,7 @@ namespace TicketBookingApi.Controllers
                 // Cập nhật DB nếu chưa được xử lý bởi IPN (tránh duplicate)
                 if (order != null && order.Trangthai == "pending")
                 {
-                    await ConfirmPaymentSuccess(order, "vnpay", transId);
+                    await ConfirmPaymentSuccess(order, transId);
                     _logger.LogInformation("VNPay Return: Order {OrderId} confirmed PAID via Return URL", orderId);
                 }
 
@@ -113,7 +102,7 @@ namespace TicketBookingApi.Controllers
 
             if (responseCode == "00")
             {
-                await ConfirmPaymentSuccess(order, "vnpay", transId);
+                await ConfirmPaymentSuccess(order, transId);
                 _logger.LogInformation("VNPay IPN: Order {OrderId} confirmed PAID", orderId);
                 return Ok(new { RspCode = "00", Message = "Confirm Success" });
             }
@@ -146,7 +135,7 @@ namespace TicketBookingApi.Controllers
             {
                 if (order != null && order.Trangthai == "pending")
                 {
-                    await ConfirmPaymentSuccess(order, "momo", transId);
+                    await ConfirmPaymentSuccess(order, transId);
                 }
                 return Redirect($"{frontendUrl}/payment/success?orderId={orderId}");
             }
@@ -188,7 +177,7 @@ namespace TicketBookingApi.Controllers
 
             if (resultCode == 0)
             {
-                await ConfirmPaymentSuccess(order, "momo", transId);
+                await ConfirmPaymentSuccess(order, transId);
                 _logger.LogInformation("MoMo IPN: Order {OrderId} confirmed PAID", orderId);
             }
             else
@@ -203,19 +192,11 @@ namespace TicketBookingApi.Controllers
         // ===== Sinh URL thanh toán =====
 
         /// <summary>Sinh URL thanh toán riêng lẻ sau khi đã chọn xong bắp nước/voucher</summary>
-        [Authorize]
         [HttpPost("create-url")]
         public async Task<IActionResult> CreatePaymentUrl([FromBody] CreatePaymentUrlDto request)
         {
-            var userId = GetUserId();
-            if (userId == null)
-                return Unauthorized(new { status = "error", message = "Token không hợp lệ" });
-
             var order = await _context.Dondatves.FirstOrDefaultAsync(d => d.Madondatve == request.MaDonDatVe);
             if (order == null) return NotFound(new { status = "error", message = "Không tìm thấy đơn đặt vé" });
-
-            if (order.IdKhach != userId.Value)
-                return StatusCode(403, new { status = "error", message = "Bạn không có quyền thanh toán đơn này" });
             
             if (order.Trangthai != "pending")
                 return BadRequest(new { status = "error", message = "Đơn đặt vé đã được thanh toán hoặc hủy" });
@@ -247,126 +228,49 @@ namespace TicketBookingApi.Controllers
 
         // ===== Helper methods =====
 
-        private async Task ConfirmPaymentSuccess(Dondatve order, string method, string transId)
+        private async Task ConfirmPaymentSuccess(Dondatve order, string transId)
         {
-            List<string> seatIds = new List<string>();
-            string? showtimeId = null;
-
-            using var tx = await _context.Database.BeginTransactionAsync();
             try
             {
-                order.Trangthai = "paid";
-
-                // Cập nhật thongtinthanhtoan
                 var payment = await _context.Thongtinthanhtoans
-                    .FirstOrDefaultAsync(t => t.Madondatve == order.Madondatve && t.Trangthai == "pending");
-                if (payment != null)
+                    .Where(t => t.Madondatve == order.Madondatve)
+                    .OrderByDescending(t => t.Thoidiemthanhtoan)
+                    .FirstOrDefaultAsync();
+
+                if (payment == null)
                 {
-                    payment.Trangthai = "success";
-                    payment.Paymentgatewaytransactionid = transId;
-                    payment.Thoidiemthanhtoan = DateTime.UtcNow;
+                    throw new InvalidOperationException($"Payment record not found for order {order.Madondatve}");
                 }
 
-                // Kích hoạt tất cả vé
-                var tickets = await _context.Vexemphims
-                    .Where(v => v.Madondatve == order.Madondatve)
-                    .ToListAsync();
-                tickets.ForEach(t => t.Trangthai = "active");
-
-                seatIds = tickets.Select(t => t.Maghe).ToList();
-                showtimeId = tickets.FirstOrDefault()?.Malichchieu;
-
-                // Ghi nhận voucher khi thanh toán thành công (không ghi lúc giữ ghế)
-                var meta = _pendingOrderService.Get(order.Madondatve);
-                if (meta?.VoucherId != null)
-                {
-                    _context.LichSuKhuyenMais.Add(new LichSuKhuyenMai
-                    {
-                        IdKhuyenMai = meta.VoucherId.Value,
-                        IdKhach = order.IdKhach,
-                        Madondatve = order.Madondatve,
-                        GiaTriGiamThucTe = meta.VoucherDiscountAmount,
-                        NgaySuDung = DateTime.UtcNow
-                    });
-
-                    var voucher = await _context.KhuyenMais.FindAsync(meta.VoucherId.Value);
-                    if (voucher != null)
-                        voucher.SoLuongDaDung = (voucher.SoLuongDaDung ?? 0) + 1;
-                }
-
-                await _context.SaveChangesAsync();
-                await tx.CommitAsync();
-
-                // Cộng chi tiêu và nâng hạng thành viên
-                await _membershipService.ApplyPaymentSpendingAsync(order.IdKhach, order.Tongtien);
-                _pendingOrderService.Remove(order.Madondatve);
-            }
-            catch
-            {
-                await tx.RollbackAsync();
-                throw;
-            }
-
-            // --- Thực hiện ngoài Transaction ---
-            try
-            {
-                if (showtimeId != null)
-                {
-                    await _hubContext.Clients.Group(showtimeId).SendAsync("ReceiveSeatStatus", new
-                    {
-                        seatIds,
-                        status = "booked"
-                    });
-                }
-
-                // Gửi thông báo (Maphim được set null vì truyền showtimeId sẽ bị lỗi Foreign Key)
-                await _notificationService.CreateAndSendNotificationAsync(order.IdKhach, "Thanh toán thành công", $"Đơn hàng {order.Madondatve} đã được thanh toán thành công. Chúc bạn xem phim vui vẻ!", order.Madondatve, null);
+                await _paymentStatusService.UpdatePaymentStatusAsync(payment.Mathanhtoan, "success", transId);
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Lỗi khi gửi thông báo/SignalR sau khi thanh toán đơn {OrderId}", order.Madondatve);
+                _logger.LogError(ex, "Lỗi khi xác nhận thanh toán thành công cho đơn {OrderId}", order.Madondatve);
+                throw;
             }
         }
 
         private async Task MarkPaymentFailed(Dondatve order, string transId)
         {
-            order.Trangthai = "cancelled";
-            var payment = await _context.Thongtinthanhtoans
-                .FirstOrDefaultAsync(t => t.Madondatve == order.Madondatve && t.Trangthai == "pending");
-            if (payment != null)
-            {
-                payment.Trangthai = "failed";
-                payment.Paymentgatewaytransactionid = transId;
-            }
-            var tickets = await _context.Vexemphims
-                .Where(v => v.Madondatve == order.Madondatve)
-                .ToListAsync();
-            tickets.ForEach(t => t.Trangthai = "cancelled");
-            await _context.SaveChangesAsync();
-
-            _pendingOrderService.Remove(order.Madondatve);
-
-            // Broadcast SignalR để nhả ghế cho các client khác
-            var seatIds = tickets.Select(t => t.Maghe).ToList();
-            var showtimeId = tickets.FirstOrDefault()?.Malichchieu;
-
             try
             {
-                if (showtimeId != null && seatIds.Any())
+                var payment = await _context.Thongtinthanhtoans
+                    .Where(t => t.Madondatve == order.Madondatve)
+                    .OrderByDescending(t => t.Thoidiemthanhtoan)
+                    .FirstOrDefaultAsync();
+
+                if (payment == null)
                 {
-                    await _hubContext.Clients.Group(showtimeId).SendAsync("ReceiveSeatStatus", new
-                    {
-                        seatIds,
-                        status = "available"
-                    });
+                    throw new InvalidOperationException($"Payment record not found for order {order.Madondatve}");
                 }
 
-                // Gửi thông báo (Maphim = null)
-                await _notificationService.CreateAndSendNotificationAsync(order.IdKhach, "Thanh toán thất bại", $"Đơn hàng {order.Madondatve} đã bị hủy do thanh toán lỗi hoặc người dùng chủ động hủy giao dịch.", order.Madondatve, null);
+                await _paymentStatusService.UpdatePaymentStatusAsync(payment.Mathanhtoan, "failed", transId);
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Lỗi khi gửi thông báo/SignalR sau khi hủy đơn {OrderId}", order.Madondatve);
+                _logger.LogError(ex, "Lỗi khi đánh dấu thanh toán thất bại cho đơn {OrderId}", order.Madondatve);
+                throw;
             }
         }
     }

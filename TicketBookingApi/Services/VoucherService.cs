@@ -95,8 +95,7 @@ namespace TicketBookingApi.Services
                     return new DiscountResult { IsSuccess = false, ErrorMessage = "Mã giảm giá này đã hết lượt sử dụng" };
 
                 var usedCount = voucher.LichSuKhuyenMais.Count(l => l.IdKhach == userId);
-                var maxUsesPerUser = voucher.SoLanDungToiDaMoiUser ?? 1;
-                if (usedCount >= maxUsesPerUser)
+                if (usedCount >= 1)
                     return new DiscountResult { IsSuccess = false, ErrorMessage = "Bạn đã sử dụng mã giảm giá này rồi" };
 
                 if (!string.IsNullOrEmpty(voucher.ApDungUser) && voucher.ApDungUser != "TAT_CA_USER")
