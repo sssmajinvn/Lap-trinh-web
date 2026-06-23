@@ -56,25 +56,24 @@ namespace TicketBookingApi.Services
 
             if (expiredPayments.Any())
             {
+                var notificationsToSend = new List<(int UserId, string MaDonDatVe)>();
+
                 foreach (var payment in expiredPayments)
                 {
                     payment.Trangthai = "failed";
                     
-                    // Lấy đơn hàng tương ứng
                     var order = await context.Dondatves.FirstOrDefaultAsync(d => d.Madondatve == payment.Madondatve);
                     if (order != null && order.Trangthai == "pending")
                     {
                         order.Trangthai = "cancelled";
                     }
 
-                    // Hủy vé
                     var tickets = await context.Vexemphims.Where(v => v.Madondatve == payment.Madondatve).ToListAsync();
                     foreach (var ticket in tickets)
                     {
                         ticket.Trangthai = "cancelled";
                     }
 
-                    // Broadcast SignalR để nhả ghế cho các client khác
                     var seatIds = tickets.Select(t => t.Maghe).ToList();
                     var showtimeId = tickets.FirstOrDefault()?.Malichchieu;
                     if (showtimeId != null && seatIds.Any())
@@ -89,20 +88,28 @@ namespace TicketBookingApi.Services
                     if (order != null)
                     {
                         pendingOrderService.Remove(order.Madondatve);
-                        try
-                        {
-                            // Gửi thông báo (Maphim = null)
-                            await notificationService.CreateAndSendNotificationAsync(order.IdKhach, "Đơn hàng hết hạn", $"Đơn hàng {order.Madondatve} đã tự động bị hủy do quá thời gian giữ ghế 5 phút.", order.Madondatve, null);
-                        }
-                        catch (Exception ex)
-                        {
-                            _logger.LogError(ex, "Lỗi khi gửi thông báo hết hạn đơn hàng {OrderId}", order.Madondatve);
-                        }
+                        notificationsToSend.Add((order.IdKhach, order.Madondatve));
                     }
                 }
 
                 await context.SaveChangesAsync();
                 _logger.LogInformation("Cleaned up {Count} expired pending bookings.", expiredPayments.Count);
+
+                foreach (var (userId, maDonDatVe) in notificationsToSend)
+                {
+                    try
+                    {
+                        await notificationService.CreateAndSendNotificationAsync(
+                            userId,
+                            "Đơn hàng hết hạn",
+                            $"Đơn hàng {maDonDatVe} đã tự động bị hủy do quá thời gian giữ ghế 5 phút.",
+                            maDonDatVe);
+                    }
+                    catch (Exception ex)
+                    {
+                        _logger.LogError(ex, "Lỗi khi gửi thông báo hết hạn đơn hàng {OrderId}", maDonDatVe);
+                    }
+                }
             }
         }
     }
