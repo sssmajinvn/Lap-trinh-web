@@ -17,14 +17,6 @@ namespace TicketBookingApi.Controllers
             _context = context;
         }
 
-        [HttpPost("movies")]
-        public async Task<IActionResult> CreateMovie([FromBody] Phim movie)
-        {
-            _context.Phims.Add(movie);
-            await _context.SaveChangesAsync();
-            return Created($"/api/movies/{movie.Maphim}", new { status = "success", data = movie });
-        }
-
         [HttpPut("movies/{id}/status")]
         public async Task<IActionResult> UpdateMovieStatus(string id, [FromBody] UpdateStatusDto dto)
         {

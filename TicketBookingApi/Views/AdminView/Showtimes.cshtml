@@ -118,12 +118,14 @@
                 <input type="hidden" id="edit-malichchieu">
 
                 <div class="form-group">
-                    <label>Phim</label>
-                    <input type="text" id="edit-tenphim-readonly" class="form-input" readonly style="opacity: 0.6; cursor: not-allowed;">
+                    <label for="edit-maphim">Chọn Phim</label>
+                    <select id="edit-maphim" class="form-select" required>
+                        <option value="">-- Chọn phim --</option>
+                    </select>
                 </div>
 
                 <div class="form-group">
-                    <label for="edit-maphong-select">Phòng Chiếu</label>
+                    <label for="edit-maphong-select">Chọn Phòng Chiếu</label>
                     <select id="edit-maphong-select" class="form-select" required>
                         <!-- Populated dynamically -->
                     </select>
@@ -204,6 +206,7 @@
             const data = await res.json();
             allMovies = data.data || [];
             populateMovieSelect('add-maphim');
+            populateMovieSelect('edit-maphim');
         } catch (err) {
             console.error('Lỗi tải phim:', err);
         }
@@ -360,9 +363,9 @@
         const payload = {
             maphim:     document.getElementById('add-maphim').value,
             maphong:    document.getElementById('add-maphong').value,
-            ngaychieu:  new Date(`${ngaychieu}T00:00:00`).toISOString(),
-            giochieu:   new Date(`${ngaychieu}T${giochieu}:00`).toISOString(),
-            gioketthuc: new Date(`${ngaychieu}T${gioketthuc}:00`).toISOString(),
+            ngaychieu:  `${ngaychieu}T00:00:00`,
+            giochieu:   `${ngaychieu}T${giochieu}:00`,
+            gioketthuc: `${ngaychieu}T${gioketthuc}:00`,
             giave:      parseInt(document.getElementById('add-giave').value)
         };
 
@@ -377,7 +380,7 @@
             });
 
             const result = await res.json();
-            if (res.ok && (result.status === 'success' || result.malichchieu || result.maLichChieu)) {
+            if (res.ok && (result.status === 'success' || result.data?.malichchieu)) {
                 showToast('Thêm lịch chiếu thành công!', 'success');
                 closeModal('add-showtime-modal');
                 document.getElementById('add-showtime-form').reset();
@@ -397,9 +400,11 @@
         const s = allShowtimes.find(x => (x.malichchieu || x.maLichChieu) === malichchieu);
         if (!s) return;
 
-        document.getElementById('edit-malichchieu').value    = malichchieu;
-        document.getElementById('edit-tenphim-readonly').value = s.tenphim || s.tenPhim || s.maphim || '—';
+        document.getElementById('edit-malichchieu').value = malichchieu;
 
+        const maphim = s.maphim || s.maPhim || '';
+        populateMovieSelect('edit-maphim');
+        document.getElementById('edit-maphim').value = maphim;
         populateRoomSelect('edit-maphong-select', s.maphong || s.maPhong);
 
         const ngay = new Date(s.ngaychieu || s.ngayChieu);
@@ -426,10 +431,11 @@
         const gioketthuc = document.getElementById('edit-gioketthuc').value;
 
         const payload = {
+            maphim:     document.getElementById('edit-maphim').value,
             maphong:    document.getElementById('edit-maphong-select').value,
-            ngaychieu:  new Date(`${ngaychieu}T00:00:00`).toISOString(),
-            giochieu:   new Date(`${ngaychieu}T${giochieu}:00`).toISOString(),
-            gioketthuc: new Date(`${ngaychieu}T${gioketthuc}:00`).toISOString(),
+            ngaychieu:  `${ngaychieu}T00:00:00`,
+            giochieu:   `${ngaychieu}T${giochieu}:00`,
+            gioketthuc: `${ngaychieu}T${gioketthuc}:00`,
             giave:      parseInt(document.getElementById('edit-giave').value)
         };
 
@@ -512,8 +518,8 @@
         setTimeout(() => toast.remove(), 3100);
     }
 
-    function openModal(id)  { document.getElementById(id).classList.add('active'); }
-    function closeModal(id) { document.getElementById(id).classList.remove('active'); }
+    function openModal(id)  { document.getElementById(id).classList.add('show'); }
+    function closeModal(id) { document.getElementById(id).classList.remove('show'); }
     function closeModalOnBackdrop(e, id) { if (e.target.id === id) closeModal(id); }
 </script>
 }

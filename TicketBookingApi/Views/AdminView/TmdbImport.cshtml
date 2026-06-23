@@ -1,0 +1,202 @@
+@{
+    Layout = "_AdminLayout";
+    ViewData["Title"] = "Import Phim từ TMDB";
+}
+
+<div class="data-card" style="margin-bottom: 2rem;">
+    <div class="card-header-actions">
+        <div>
+            <h3 class="card-title">Phim Trending trên TMDB</h3>
+            <p style="font-size: 0.85rem; color: var(--text-muted); margin-top: 6px;">
+                Danh sách phim đang thịnh hành tuần này. Bấm <strong>Thêm</strong> để import vào hệ thống với trạng thái <span class="badge-status pending">pending</span> (kèm đạo diễn &amp; diễn viên).
+            </p>
+        </div>
+        <div style="display: flex; gap: 10px;">
+            <a href="/Admin/Movies" class="btn btn-secondary">
+                <i class="fa-solid fa-arrow-left" style="margin-right: 6px;"></i> Quay lại danh sách
+            </a>
+        </div>
+    </div>
+
+    <div class="table-filter-bar">
+        <div class="filter-group">
+            <div class="search-input-wrapper">
+                <i class="fa-solid fa-magnifying-glass"></i>
+                <input type="text" id="tmdb-filter-input" class="form-input" placeholder="Lọc theo tên phim..." oninput="filterTrending()">
+            </div>
+        </div>
+        <div id="tmdb-page-info" style="font-size: 0.85rem; color: var(--text-muted);"></div>
+    </div>
+
+    <div class="admin-table-wrapper">
+        <table class="admin-table">
+            <thead>
+                <tr>
+                    <th>Poster &amp; Tên Phim</th>
+                    <th>Năm</th>
+                    <th>Điểm TMDB</th>
+                    <th>Mô tả</th>
+                    <th style="text-align: right;">Hành Động</th>
+                </tr>
+            </thead>
+            <tbody id="tmdb-tbody">
+                <tr>
+                    <td colspan="5" style="text-align: center; color: var(--text-muted); padding: 2rem;">
+                        <i class="fa-solid fa-spinner fa-spin" style="margin-right: 8px;"></i>Đang tải phim trending...
+                    </td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+
+    <div style="display: flex; justify-content: center; gap: 12px; margin-top: 1.5rem;">
+        <button class="btn btn-outline" id="btn-prev-page" onclick="changePage(-1)" disabled>
+            <i class="fa-solid fa-chevron-left"></i> Trang trước
+        </button>
+        <button class="btn btn-outline" id="btn-next-page" onclick="changePage(1)" disabled>
+            Trang sau <i class="fa-solid fa-chevron-right"></i>
+        </button>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        let trendingMovies = [];
+        let currentPage = 1;
+        let totalPages = 1;
+
+        document.addEventListener('DOMContentLoaded', () => loadTrending(1));
+
+        async function loadTrending(page) {
+            const token = localStorage.getItem('admin_token');
+            const tbody = document.getElementById('tmdb-tbody');
+            tbody.innerHTML = `<tr><td colspan="5" style="text-align:center;color:var(--text-muted);padding:2rem;">
+                <i class="fa-solid fa-spinner fa-spin"></i> Đang tải...</td></tr>`;
+
+            try {
+                const res = await fetch(`/api/admin/movies/trending?page=${page}`, {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+                const result = await res.json();
+
+                if (!res.ok || result.status !== 'success') {
+                    throw new Error(result.message || 'Lỗi tải TMDB');
+                }
+
+                trendingMovies = result.data || [];
+                currentPage = result.page || page;
+                totalPages = result.totalPages || 1;
+
+                document.getElementById('tmdb-page-info').textContent = `Trang ${currentPage} / ${totalPages}`;
+                document.getElementById('btn-prev-page').disabled = currentPage <= 1;
+                document.getElementById('btn-next-page').disabled = currentPage >= totalPages;
+
+                renderTrendingTable(trendingMovies);
+            } catch (err) {
+                tbody.innerHTML = `<tr><td colspan="5" style="text-align:center;color:#ff4757;padding:2rem;">${err.message}</td></tr>`;
+            }
+        }
+
+        function renderTrendingTable(movies) {
+            const tbody = document.getElementById('tmdb-tbody');
+            if (!movies.length) {
+                tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;color:var(--text-muted);">Không có phim nào</td></tr>';
+                return;
+            }
+
+            tbody.innerHTML = movies.map(m => {
+                const poster = m.posterPath ? `https://image.tmdb.org/t/p/w300${m.posterPath}` : '/img/default-poster.png';
+                const year = m.releaseDate ? m.releaseDate.split('-')[0] : 'N/A';
+                const overview = (m.overview || '').length > 120 ? m.overview.substring(0, 120) + '...' : (m.overview || 'Chưa có mô tả');
+                const imported = m.alreadyImported;
+
+                return `
+                <tr id="tmdb-row-${m.id}">
+                    <td>
+                        <div class="movie-cell">
+                            <img src="${poster}" class="movie-poster-mini" alt="${m.title}">
+                            <div>
+                                <div style="font-weight:600;">${m.title}</div>
+                                <div style="font-size:0.75rem;color:var(--text-muted);">TMDB ID: ${m.id}</div>
+                            </div>
+                        </div>
+                    </td>
+                    <td>${year}</td>
+                    <td><span style="color:#f1c40f;font-weight:700;"><i class="fa-solid fa-star"></i> ${m.voteAverage?.toFixed(1) ?? '—'}</span></td>
+                    <td style="font-size:0.85rem;color:var(--text-muted);max-width:280px;">${overview}</td>
+                    <td style="text-align:right;">
+                        ${imported
+                            ? '<span class="badge-status hidden">Đã thêm</span>'
+                            : `<button class="btn btn-primary" onclick="importMovie(${m.id})" id="btn-import-${m.id}" style="margin:0;padding:6px 14px;font-size:0.8rem;">
+                                <i class="fa-solid fa-plus"></i> Thêm
+                               </button>`}
+                    </td>
+                </tr>`;
+            }).join('');
+        }
+
+        function filterTrending() {
+            const q = document.getElementById('tmdb-filter-input').value.toLowerCase().trim();
+            if (!q) {
+                renderTrendingTable(trendingMovies);
+                return;
+            }
+            renderTrendingTable(trendingMovies.filter(m => (m.title || '').toLowerCase().includes(q)));
+        }
+
+        function changePage(delta) {
+            const next = currentPage + delta;
+            if (next < 1 || next > totalPages) return;
+            loadTrending(next);
+        }
+
+        async function importMovie(tmdbId) {
+            const token = localStorage.getItem('admin_token');
+            const btn = document.getElementById(`btn-import-${tmdbId}`);
+            if (btn) {
+                btn.disabled = true;
+                btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i>';
+            }
+
+            try {
+                const res = await fetch('/api/admin/movies', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${token}`
+                    },
+                    body: JSON.stringify({ tmdbId: parseInt(tmdbId) })
+                });
+
+                let result;
+                try {
+                    result = await res.json();
+                } catch {
+                    throw new Error(`Máy chủ trả về lỗi (HTTP ${res.status})`);
+                }
+
+                if (res.ok && result.status === 'success') {
+                    const row = document.getElementById(`tmdb-row-${tmdbId}`);
+                    if (row) {
+                        const actionCell = row.querySelector('td:last-child');
+                        actionCell.innerHTML = '<span class="badge-status pending">Đã thêm (pending)</span>';
+                    }
+                    const movie = trendingMovies.find(x => x.id === tmdbId);
+                    if (movie) movie.alreadyImported = true;
+                } else {
+                    alert(result.message || 'Lỗi khi thêm phim');
+                    if (btn) {
+                        btn.disabled = false;
+                        btn.innerHTML = '<i class="fa-solid fa-plus"></i> Thêm';
+                    }
+                }
+            } catch (err) {
+                alert(err.message || 'Lỗi kết nối máy chủ');
+                if (btn) {
+                    btn.disabled = false;
+                    btn.innerHTML = '<i class="fa-solid fa-plus"></i> Thêm';
+                }
+            }
+        }
+    </script>
+}

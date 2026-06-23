@@ -33,6 +33,12 @@ namespace TicketBookingApi.Controllers
             return View();
         }
 
+        [HttpGet("Movies/Tmdb")]
+        public IActionResult TmdbImport()
+        {
+            return View();
+        }
+
         [HttpGet("Showtimes")]
         public IActionResult Showtimes()
         {

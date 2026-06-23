@@ -12,9 +12,6 @@
         </div>
     </div>
     <div class="header-actions" style="display: flex; gap: 10px;">
-        <button class="btn btn-outline" onclick="window.location.href='/Admin/Dashboard'">
-            <i class="fa-solid fa-arrow-left"></i> Quay lại
-        </button>
         <button class="btn btn-primary" id="btnAddConcession" onclick="showAddModal()">
             <i class="fa-solid fa-plus"></i> Thêm Mới
         </button>
@@ -173,11 +170,16 @@
             editingItemId = id;
             const modal = document.getElementById('item-modal');
             const form = document.getElementById('item-form');
+            const title = document.getElementById('item-modal-title');
             form.reset();
-            
+            document.getElementById('itemIsAvailable').checked = true;
+
             if (id) {
+                title.textContent = 'Cập nhật Sản phẩm';
                 const token = localStorage.getItem('admin_token');
-                const res = await fetch(`/api/admin/items`); // Giả định API trả về list, chúng ta lấy item tương ứng (hoặc thêm GET by ID)
+                const res = await fetch('/api/admin/items', {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
                 const result = await res.json();
                 const item = result.data.find(x => x.itemId == id);
                 if (item) {
@@ -187,7 +189,10 @@
                     document.getElementById('itemStock').value = item.stockQuantity;
                     document.getElementById('itemUnit').value = item.unit || 'phần';
                     document.getElementById('itemImage').value = item.imageUrl || '';
+                    document.getElementById('itemIsAvailable').checked = item.isAvailable !== false;
                 }
+            } else {
+                title.textContent = 'Thêm Sản phẩm Mới';
             }
             modal.style.display = 'flex';
         }
@@ -203,19 +208,26 @@
                 unit: document.getElementById('itemUnit').value,
                 imageUrl: document.getElementById('itemImage').value
             };
-            
+
+            if (editingItemId) {
+                data.isAvailable = document.getElementById('itemIsAvailable').checked;
+            }
+
             const url = editingItemId ? `/api/admin/items/${editingItemId}` : '/api/admin/items';
             const method = editingItemId ? 'PUT' : 'POST';
-            
+
             const res = await fetch(url, {
                 method: method,
                 headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
                 body: JSON.stringify(data)
             });
+            const result = await res.json();
             if (res.ok) {
-                alert("Thành công!");
+                alert(result.message || "Thành công!");
                 document.getElementById('item-modal').style.display = 'none';
                 loadItems();
+            } else {
+                alert(result.message || "Lỗi lưu sản phẩm");
             }
         }
 
@@ -388,7 +400,7 @@
 <div id="item-modal" class="admin-modal-backdrop" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.8); z-index:9999; justify-content:center; align-items:center;">
     <div class="modal-card" style="width: 450px; background: #1a1a1e; border: 1px solid var(--glass-border); border-radius: 12px; padding: 24px;">
         <div class="modal-header" style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px;">
-            <h3 style="margin:0; color:var(--color-primary);">Quản lý Sản phẩm lẻ</h3>
+            <h3 id="item-modal-title" style="margin:0; color:var(--color-primary);">Quản lý Sản phẩm lẻ</h3>
             <button onclick="this.closest('.admin-modal-backdrop').style.display='none'" style="background:none; border:none; color:#fff; font-size:24px; cursor:pointer;">&times;</button>
         </div>
         <form id="item-form" onsubmit="handleItemSubmit(event)">
@@ -414,12 +426,17 @@
                     <input type="number" id="itemStock" class="form-input" value="100">
                 </div>
             </div>
-            <div class="form-group mb-4">
+            <div class="form-group mb-3">
                 <label class="form-label">Đường dẫn Ảnh (URL)</label>
                 <input type="text" id="itemImage" class="form-input" placeholder="https://...">
             </div>
+            <div class="form-group mb-4" id="itemAvailableGroup" style="display:flex; align-items:center; gap:10px;">
+                <input type="checkbox" id="itemIsAvailable" checked style="width:18px; height:18px;">
+                <label class="form-label" for="itemIsAvailable" style="margin:0;">Đang bán</label>
+            </div>
             <input type="hidden" id="itemUnit" value="phần">
             <div style="display:flex; gap:10px; justify-content:flex-end;">
+                <button type="button" class="btn btn-outline" onclick="document.getElementById('item-modal').style.display='none'">Hủy</button>
                 <button type="submit" class="btn btn-primary">Lưu Sản Phẩm</button>
             </div>
         </form>

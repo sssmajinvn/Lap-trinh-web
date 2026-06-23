@@ -211,7 +211,7 @@ namespace TicketBookingApi.Controllers.Admin
 
 
         [HttpGet("/api/admin/reports/monthly")]
-        public async Task<IActionResult> MonthlyReport([FromQuery] string? month)
+        public async Task<IActionResult> MonthlyReport([FromQuery] string? month, [FromQuery] string? format)
         {
             if (string.IsNullOrWhiteSpace(month) || !System.Text.RegularExpressions.Regex.IsMatch(month, @"^\d{4}-\d{2}$"))
             {
@@ -274,6 +274,27 @@ namespace TicketBookingApi.Controllers.Admin
                 var tickets = await _context.Database
                     .SqlQueryRaw<MonthlyTicketRow>(ticketSql, int.Parse(year), int.Parse(mon))
                     .ToListAsync();
+
+                if (string.Equals(format, "json", StringComparison.OrdinalIgnoreCase))
+                {
+                    return Ok(new
+                    {
+                        status = "success",
+                        data = new
+                        {
+                            month,
+                            tong_don = (int)summary.tong_don,
+                            tong_ve = (int)summary.tong_ve,
+                            tong_doanh_thu = (int)summary.tong_doanh_thu,
+                            chi_tiet_phim = details.Select(d => new
+                            {
+                                tenphim = d.tenphim,
+                                so_ve = (int)d.so_ve,
+                                doanh_thu = (int)d.doanh_thu
+                            }).ToList()
+                        }
+                    });
+                }
 
                 using var workbook = new XLWorkbook();
 

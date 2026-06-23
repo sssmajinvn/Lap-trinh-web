@@ -147,8 +147,8 @@ namespace TicketBookingApi.Controllers.Admin
             existing.Giochieu = dto.Giochieu;
             existing.Gioketthuc = dto.Gioketthuc;
             existing.Giave = dto.Giave;
-            existing.Maphim = dto.Maphim;
-            existing.Maphong = dto.Maphong;
+            if (!string.IsNullOrWhiteSpace(dto.Maphim)) existing.Maphim = dto.Maphim;
+            if (!string.IsNullOrWhiteSpace(dto.Maphong)) existing.Maphong = dto.Maphong;
 
             await _context.SaveChangesAsync();
             return Ok(new { status = "success", data = new {

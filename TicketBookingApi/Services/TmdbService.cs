@@ -8,6 +8,7 @@ namespace TicketBookingApi.Services
     public interface ITmdbService
     {
         Task<TmdbMovieDetail?> GetMovieDetailAsync(int tmdbId);
+        Task<TmdbTrendingResult?> GetTrendingMoviesAsync(int page = 1);
     }
 
     public class TmdbService : ITmdbService
@@ -16,6 +17,12 @@ namespace TicketBookingApi.Services
         private readonly string _apiKey;
         private const string TmdbBaseUrl = "https://api.themoviedb.org/3";
         private const string ImageBaseUrl = "https://image.tmdb.org/t/p/w500";
+
+        private static readonly JsonSerializerOptions TmdbJsonOptions = new()
+        {
+            PropertyNameCaseInsensitive = true,
+            PropertyNamingPolicy = JsonNamingPolicy.SnakeCaseLower
+        };
 
         public TmdbService(IHttpClientFactory httpClientFactory, IConfiguration configuration)
         {
@@ -30,9 +37,42 @@ namespace TicketBookingApi.Services
             var response = await client.GetAsync(url);
             if (!response.IsSuccessStatusCode) return null;
             var json = await response.Content.ReadAsStringAsync();
-            var detail = JsonSerializer.Deserialize<TmdbMovieDetail>(json, new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
-            return detail;
+            try
+            {
+                return JsonSerializer.Deserialize<TmdbMovieDetail>(json, TmdbJsonOptions);
+            }
+            catch (JsonException)
+            {
+                return null;
+            }
         }
+
+        public async Task<TmdbTrendingResult?> GetTrendingMoviesAsync(int page = 1)
+        {
+            var client = _httpClientFactory.CreateClient();
+            var url = $"{TmdbBaseUrl}/trending/movie/week?api_key={_apiKey}&page={page}";
+            var response = await client.GetAsync(url);
+            if (!response.IsSuccessStatusCode) return null;
+            var json = await response.Content.ReadAsStringAsync();
+            return JsonSerializer.Deserialize<TmdbTrendingResult>(json, TmdbJsonOptions);
+        }
+    }
+
+    public class TmdbTrendingResult
+    {
+        public int Page { get; set; }
+        public List<TmdbTrendingMovie> Results { get; set; } = new();
+        public int TotalPages { get; set; }
+    }
+
+    public class TmdbTrendingMovie
+    {
+        public int Id { get; set; }
+        public string? Title { get; set; }
+        public string? Overview { get; set; }
+        public string? PosterPath { get; set; }
+        public string? ReleaseDate { get; set; }
+        public double VoteAverage { get; set; }
     }
 
     // DTOs matching TMDB response (subset needed for mapping)
@@ -42,7 +82,8 @@ namespace TicketBookingApi.Services
         public string Title { get; set; } = null!;
         public string? Overview { get; set; }
         public string? PosterPath { get; set; }
-        public DateTime ReleaseDate { get; set; }
+        public string? ReleaseDate { get; set; }
+        public int Runtime { get; set; }
         public TmdbVideos? Videos { get; set; }
         public TmdbCredits? Credits { get; set; }
     }

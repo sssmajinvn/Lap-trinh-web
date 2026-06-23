@@ -34,6 +34,17 @@
             <i class="fa-solid fa-users"></i>
         </div>
     </div>
+
+    <div class="stat-card">
+        <div class="stat-card-details">
+            <h3>Doanh thu tháng này</h3>
+            <div id="stat-monthly-revenue" class="stat-card-value">0₫</div>
+            <div id="stat-monthly-meta" style="font-size: 0.75rem; color: var(--text-muted); margin-top: 4px;">—</div>
+        </div>
+        <div class="stat-card-icon revenue">
+            <i class="fa-solid fa-calendar-check"></i>
+        </div>
+    </div>
 </div>
 
 <!-- 📊 Charts Section -->
@@ -131,6 +142,7 @@
             document.getElementById('report-month-input').value = `${year}-${month}`;
 
             loadDashboardSummary();
+            loadMonthlyRevenue();
             loadWeeklyRevenue();
             loadDailyRevenueChart();
             loadTopMovies();
@@ -154,6 +166,30 @@
                 }
             } catch (err) {
                 console.error("Lỗi load summary stats:", err);
+            }
+        }
+
+        // 1b. Tải doanh thu tháng hiện tại
+        async function loadMonthlyRevenue() {
+            try {
+                const token = localStorage.getItem('admin_token');
+                const now = new Date();
+                const month = `${now.getFullYear()}-${(now.getMonth() + 1).toString().padStart(2, '0')}`;
+
+                const response = await fetch(`/api/admin/reports/monthly?month=${month}&format=json`, {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+                const result = await response.json();
+
+                if (response.ok && result.status === 'success') {
+                    const data = result.data;
+                    document.getElementById('stat-monthly-revenue').textContent =
+                        new Intl.NumberFormat('vi-VN').format(data.tong_doanh_thu) + '₫';
+                    document.getElementById('stat-monthly-meta').textContent =
+                        `${data.tong_ve} vé · ${data.tong_don} đơn hàng (tháng ${month})`;
+                }
+            } catch (err) {
+                console.error("Lỗi load monthly revenue:", err);
             }
         }
 

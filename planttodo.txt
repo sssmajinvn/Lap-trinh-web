@@ -1,13 +1,21 @@
-📊 Dashboard & Báo cáo (Stats)
- Tổng quan Dashboard: Hiển thị doanh thu trong ngày, số vé bán ra, tổng khách hàng (Sử dụng API dashboard-summary).
- Biểu đồ tăng trưởng: Biểu đồ đường (Daily Revenue) và biểu đồ cột (Weekly Revenue).
- Xếp hạng: Top phim/rạp có doanh thu cao nhất.
- Xuất báo cáo: Nút xuất file Excel báo cáo tháng (Sử dụng API reports/monthly).
-🎬 Quản lý Phim (Movies)
- Danh sách phim: Hiển thị dưới dạng Grid/Table, lọc theo trạng thái (Now Showing, Coming Soon).
- Import từ TMDB: Ô tìm kiếm phim trực tuyến, xem nhanh kết quả và nhấn "Thêm nhanh" vào hệ thống (Sử dụng API search và POST).
- Chi tiết & Trạng thái: Chỉnh sửa mô tả, trailer và cập nhật trạng thái hiển thị.
-📅 Quản lý Suất chiếu (Showtimes)
- Lịch chiếu tổng quát: Giao diện lịch (Calendar) hoặc danh sách lọc theo phim/phòng.
- Tạo suất chiếu: Form chọn Phim + Phòng + Giờ bắt đầu (Hệ thống tự tính giờ kết thúc dựa trên thời lượng phim).
- Cảnh báo trùng: Hiển thị thông báo nếu phòng đã có lịch chiếu khác trong cùng khung giờ.
+chức năng admin đang bị lỗi các chức năng sau:
+Tổng quan (dashboard): chưa thống kê doanh thu tháng (gọi api [HttpGet("/api/admin/reports/monthly")])
+Quản lý phim: 
+- Chưa thêm được, chưa sửa được
+- Thêm một trang phụ khi bấm vào nút import TMDB, layout giống như trang quản lý phim.
+- Đọc file MovieAdminController.cs, TmdbService.cs để làm trang phụ, trang này sẽ hiển thị các phim trending trên TMDB và mục hành động chỉ có nút add để thêm phim vào database với trạng thái pending, lấy đầy đủ thông tin đạo diễn, diễn viên 
+Quản lý lịch chiếu: ShowtimeAdminController
+- chưa thêm được, chưa sửa được
+- tạo form thêm lịch chiếu gọi api [HttpPost] public async Task<IActionResult> Create([FromBody] ShowtimeDto dto)
+- form sửa vẽ giống form thêm [HttpPut("{id}")] public async Task<IActionResult> Update(string id, [FromBody] ShowtimeDto dto)
+Bắp nước và combo: xóa nút quay lại, copy giao diện thêm accessories (items) cho phần sửa gọi api [HttpPut("items/{id}")] public async Task<IActionResult> UpdateItem(int id, [FromBody] UpdateItemDto dto) trong ConcessionAdminController
+
+================================================================
+ĐÃ XỬ LÝ (23/06/2026):
+[x] Dashboard: thêm KPI "Doanh thu tháng này" gọi /api/admin/reports/monthly?format=json
+[x] API monthly hỗ trợ tham số format=json trả JSON thống kê (ngoài xuất Excel)
+[x] Quản lý phim: sửa PUT /api/admin/movies/{id}, trang /Admin/Movies/Tmdb (trending TMDB)
+[x] API GET /api/admin/movies/trending, POST import với trạng thái pending + đạo diễn/diễn viên
+[x] Lịch chiếu: form thêm/sửa gọi POST/PUT /api/admin/showtimes, form sửa giống form thêm
+[x] Bắp nước: xóa nút quay lại, form sửa item dùng PUT /api/admin/items/{id}
+================================================================
