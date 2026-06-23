@@ -17,6 +17,12 @@ namespace TicketBookingApi.Controllers
             _context = context;
         }
 
+        private int GetUserId()
+        {
+            var raw = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            return int.TryParse(raw, out var id) ? id : 0;
+        }
+
         // GET /api/concessions/items
         [HttpGet("items")]
         public async Task<IActionResult> GetItems()
@@ -74,15 +80,25 @@ namespace TicketBookingApi.Controllers
             if (string.IsNullOrWhiteSpace(request.MaDonDatVe) || request.Items == null || request.Items.Count == 0)
                 return BadRequest(new { status = "error", message = "Vui lòng cung cấp madondatve và danh sách combo" });
 
-            var orderExists = await _context.Dondatves
-                .AnyAsync(d => d.Madondatve == request.MaDonDatVe);
+            var userId = GetUserId();
+            if (userId == 0)
+                return Unauthorized(new { status = "error", message = "Token không hợp lệ" });
 
-            if (!orderExists)
+            var order = await _context.Dondatves.FirstOrDefaultAsync(d => d.Madondatve == request.MaDonDatVe);
+            if (order == null)
                 return NotFound(new { status = "error", message = "Không tìm thấy đơn đặt vé" });
+            if (order.IdKhach != userId)
+                return StatusCode(403, new { status = "error", message = "Bạn không có quyền cập nhật đơn này" });
+            if (order.Trangthai != "pending")
+                return BadRequest(new { status = "error", message = "Chỉ có thể thêm combo khi đơn đang chờ thanh toán" });
 
             using var tx = await _context.Database.BeginTransactionAsync();
             try
             {
+                var oldConcessionTotal = await _context.OrderConcessions
+                    .Where(oc => oc.Madondatve == request.MaDonDatVe)
+                    .SumAsync(oc => (int?)(oc.ThanhTien ?? oc.UnitPrice * oc.Quantity)) ?? 0;
+
                 // Xóa concessions cũ của đơn hàng này (nếu có), cho phép cập nhật lại
                 var oldItems = _context.OrderConcessions
                     .Where(oc => oc.Madondatve == request.MaDonDatVe);
@@ -135,9 +151,7 @@ namespace TicketBookingApi.Controllers
                     }
                 }
 
-                // Cộng tiền combo vào tổng tiền đơn
-                var order = await _context.Dondatves.FindAsync(request.MaDonDatVe);
-                if (order != null) order.Tongtien += totalComboPrice;
+                order.Tongtien = order.Tongtien - oldConcessionTotal + totalComboPrice;
 
                 await _context.SaveChangesAsync();
                 await tx.CommitAsync();
@@ -161,6 +175,16 @@ namespace TicketBookingApi.Controllers
         [HttpGet("order/{madondatve}")]
         public async Task<IActionResult> GetConcessionOrder(string madondatve)
         {
+            var userId = GetUserId();
+            if (userId == 0)
+                return Unauthorized(new { status = "error", message = "Token không hợp lệ" });
+
+            var order = await _context.Dondatves.FirstOrDefaultAsync(d => d.Madondatve == madondatve);
+            if (order == null)
+                return NotFound(new { status = "error", message = "Không tìm thấy đơn đặt vé" });
+            if (order.IdKhach != userId)
+                return StatusCode(403, new { status = "error", message = "Bạn không có quyền xem đơn này" });
+
             var result = await _context.OrderConcessions
                 .Where(oc => oc.Madondatve == madondatve)
                 .Include(oc => oc.Combo)

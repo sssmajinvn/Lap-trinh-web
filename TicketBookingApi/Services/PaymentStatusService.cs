@@ -28,6 +28,8 @@ namespace TicketBookingApi.Services
         private readonly IHubContext<SeatHub> _hubContext;
         private readonly INotificationService _notificationService;
         private readonly IEmailService _emailService;
+        private readonly IPendingOrderMetadataService _pendingOrderService;
+        private readonly IMembershipService _membershipService;
         private readonly ILogger<PaymentStatusService> _logger;
 
         public PaymentStatusService(
@@ -35,12 +37,16 @@ namespace TicketBookingApi.Services
             IHubContext<SeatHub> hubContext,
             INotificationService notificationService,
             IEmailService emailService,
+            IPendingOrderMetadataService pendingOrderService,
+            IMembershipService membershipService,
             ILogger<PaymentStatusService> logger)
         {
             _context = context;
             _hubContext = hubContext;
             _notificationService = notificationService;
             _emailService = emailService;
+            _pendingOrderService = pendingOrderService;
+            _membershipService = membershipService;
             _logger = logger;
         }
 
@@ -116,6 +122,33 @@ namespace TicketBookingApi.Services
 
             try
             {
+                if (normalizedRequestedStatus == "success")
+                {
+                    var meta = _pendingOrderService.Get(order.Madondatve);
+                    if (meta?.VoucherId != null)
+                    {
+                        _context.LichSuKhuyenMais.Add(new LichSuKhuyenMai
+                        {
+                            IdKhuyenMai = meta.VoucherId.Value,
+                            IdKhach = order.IdKhach,
+                            Madondatve = order.Madondatve,
+                            GiaTriGiamThucTe = meta.VoucherDiscountAmount,
+                            NgaySuDung = DateTime.UtcNow
+                        });
+
+                        var voucher = await _context.KhuyenMais.FindAsync(meta.VoucherId.Value);
+                        if (voucher != null)
+                        {
+                            voucher.SoLuongDaDung = (voucher.SoLuongDaDung ?? 0) + 1;
+                        }
+
+                        await _context.SaveChangesAsync();
+                    }
+
+                    await _membershipService.ApplyPaymentSpendingAsync(order.IdKhach, order.Tongtien);
+                    _pendingOrderService.Remove(order.Madondatve);
+                }
+
                 if (!string.IsNullOrWhiteSpace(showtimeId) && seatIds.Count > 0)
                 {
                     var seatStatus = normalizedRequestedStatus == "success"
@@ -133,6 +166,7 @@ namespace TicketBookingApi.Services
 
                 if (normalizedRequestedStatus == "failed" || normalizedRequestedStatus == "cancelled")
                 {
+                    _pendingOrderService.Remove(order.Madondatve);
                     await _notificationService.CreateAndSendNotificationAsync(
                         order.IdKhach,
                         "Đơn hàng đã bị hủy",
