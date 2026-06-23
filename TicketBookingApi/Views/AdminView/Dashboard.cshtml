@@ -1,0 +1,408 @@
+@{
+    Layout = "_AdminLayout";
+    ViewData["Title"] = "Tổng Quan Hệ Thống";
+}
+
+<!-- 📊 KPI Cards Section -->
+<div class="stat-cards-grid">
+    <div class="stat-card">
+        <div class="stat-card-details">
+            <h3>Doanh thu hôm nay</h3>
+            <div id="stat-revenue" class="stat-card-value">0₫</div>
+        </div>
+        <div class="stat-card-icon revenue">
+            <i class="fa-solid fa-hand-holding-dollar"></i>
+        </div>
+    </div>
+    
+    <div class="stat-card">
+        <div class="stat-card-details">
+            <h3>Vé bán ra hôm nay</h3>
+            <div id="stat-tickets" class="stat-card-value">0</div>
+        </div>
+        <div class="stat-card-icon tickets">
+            <i class="fa-solid fa-ticket"></i>
+        </div>
+    </div>
+    
+    <div class="stat-card">
+        <div class="stat-card-details">
+            <h3>Tổng số khách hàng</h3>
+            <div id="stat-customers" class="stat-card-value">0</div>
+        </div>
+        <div class="stat-card-icon customers">
+            <i class="fa-solid fa-users"></i>
+        </div>
+    </div>
+</div>
+
+<!-- 📊 Charts Section -->
+<div class="charts-grid">
+    <div class="chart-card">
+        <div class="chart-header">
+            <h3 class="chart-title">Biểu đồ doanh thu hàng ngày (Tháng này)</h3>
+            <span style="font-size: 0.8rem; color: var(--text-muted);"><i class="fa-solid fa-chart-line"></i> Doanh thu thực tế</span>
+        </div>
+        <div class="chart-container">
+            <canvas id="dailyRevenueChart"></canvas>
+        </div>
+    </div>
+
+    <div class="chart-card">
+        <div class="chart-header">
+            <h3 class="chart-title">Doanh thu 7 ngày qua</h3>
+            <span style="font-size: 0.8rem; color: var(--text-muted);"><i class="fa-solid fa-chart-column"></i> Doanh thu tuần</span>
+        </div>
+        <div class="chart-container">
+            <canvas id="weeklyRevenueChart"></canvas>
+        </div>
+    </div>
+</div>
+
+<!-- 📊 Rankings & Monthly Report Export -->
+<div class="rankings-grid">
+    <!-- Top Movies Table -->
+    <div class="data-card">
+        <h3 class="card-title" style="margin-bottom: 1.25rem;"><i class="fa-solid fa-fire text-danger"></i> Top Phim Doanh Thu Cao Nhất</h3>
+        <div class="admin-table-wrapper">
+            <table class="admin-table">
+                <thead>
+                    <tr>
+                        <th>Phim</th>
+                        <th>Số vé bán</th>
+                        <th>Tổng tiền</th>
+                    </tr>
+                </thead>
+                <tbody id="top-movies-tbody">
+                    <tr>
+                        <td colspan="3" style="text-align: center; color: var(--text-muted);">Đang tải dữ liệu...</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- Top Theaters & Report Download -->
+    <div class="data-card" style="display: flex; flex-direction: column; justify-content: space-between; gap: 1.5rem;">
+        <div>
+            <h3 class="card-title" style="margin-bottom: 1.25rem;"><i class="fa-solid fa-building-user text-primary"></i> Top Rạp Theo Doanh Thu</h3>
+            <div class="admin-table-wrapper">
+                <table class="admin-table">
+                    <thead>
+                        <tr>
+                            <th>Rạp chiếu</th>
+                            <th>Số vé bán</th>
+                            <th>Doanh thu</th>
+                        </tr>
+                    </thead>
+                    <tbody id="top-theaters-tbody">
+                        <tr>
+                            <td colspan="3" style="text-align: center; color: var(--text-muted);">Đang tải dữ liệu...</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+        
+        <!-- Monthly Excel Export Panel -->
+        <div style="border-top: 1px dashed var(--glass-border); padding-top: 1.5rem;">
+            <h4 style="font-size: 0.9rem; margin-bottom: 10px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px;">Xuất báo cáo doanh thu tháng</h4>
+            <div class="excel-export-box">
+                <input type="month" id="report-month-input" class="month-picker">
+                <button class="btn btn-primary" onclick="exportMonthlyReport()" style="margin: 0; padding: 8px 16px; font-size: 0.85rem; height: 38px;">
+                    <i class="fa-solid fa-file-excel" style="margin-right: 6px;"></i> Tải Báo Cáo Excel
+                </button>
+            </div>
+            <div id="export-msg" style="font-size: 0.75rem; margin-top: 6px;"></div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <!-- Chart.js CDN -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // Set default month in picker to current month
+            const now = new Date();
+            const year = now.getFullYear();
+            const month = (now.getMonth() + 1).toString().padStart(2, '0');
+            document.getElementById('report-month-input').value = `${year}-${month}`;
+
+            loadDashboardSummary();
+            loadWeeklyRevenue();
+            loadDailyRevenueChart();
+            loadTopMovies();
+            loadTopTheaters();
+        });
+
+        // 1. Tải Summary KPIs (Doanh thu ngày, vé ngày, tổng khách hàng)
+        async function loadDashboardSummary() {
+            try {
+                const token = localStorage.getItem('admin_token');
+                const response = await fetch('/api/admin/stats/dashboard-summary', {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+                const result = await response.json();
+
+                if (response.ok && result.status === 'success') {
+                    const data = result.data;
+                    document.getElementById('stat-revenue').textContent = new Intl.NumberFormat('vi-VN').format(data.totalRevenueToday) + '₫';
+                    document.getElementById('stat-tickets').textContent = data.ticketSoldToday;
+                    document.getElementById('stat-customers').textContent = data.totalCustomersToday;
+                }
+            } catch (err) {
+                console.error("Lỗi load summary stats:", err);
+            }
+        }
+
+        // 2. Tải biểu đồ doanh thu tuần qua (Weekly)
+        async function loadWeeklyRevenue() {
+            try {
+                const token = localStorage.getItem('admin_token');
+                const response = await fetch('/api/admin/stats/weekly-revenue', {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+                const result = await response.json();
+
+                if (response.ok && result.status === 'success') {
+                    const data = result.data;
+                    const labels = data.map(d => d.nhan);
+                    const values = data.map(d => d.doanh_thu);
+
+                    renderWeeklyChart(labels, values);
+                }
+            } catch (err) {
+                console.error("Lỗi load weekly revenue:", err);
+            }
+        }
+
+        function renderWeeklyChart(labels, values) {
+            const ctx = document.getElementById('weeklyRevenueChart').getContext('2d');
+            new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        label: 'Doanh thu (VND)',
+                        data: values,
+                        backgroundColor: 'rgba(229, 9, 20, 0.65)',
+                        borderColor: '#e50914',
+                        borderWidth: 1.5,
+                        borderRadius: 8,
+                        hoverBackgroundColor: 'rgba(229, 9, 20, 0.9)'
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        y: {
+                            grid: { color: 'rgba(255, 255, 255, 0.05)' },
+                            ticks: { color: '#a0aec0', font: { family: 'Outfit' } }
+                        },
+                        x: {
+                            grid: { display: false },
+                            ticks: { color: '#a0aec0', font: { family: 'Outfit' } }
+                        }
+                    },
+                    plugins: {
+                        legend: { display: false }
+                    }
+                }
+            });
+        }
+
+        // 3. Tải biểu đồ doanh thu hàng ngày trong tháng này (Daily)
+        async function loadDailyRevenueChart() {
+            try {
+                const token = localStorage.getItem('admin_token');
+                
+                // Tính khoảng thời gian từ ngày 1 đầu tháng đến hôm nay
+                const today = new Date();
+                const year = today.getFullYear();
+                const month = (today.getMonth() + 1).toString().padStart(2, '0');
+                const lastDay = today.getDate().toString().padStart(2, '0');
+                
+                const fromDate = `${year}-${month}-01`;
+                const toDate = `${year}-${month}-${lastDay}`;
+
+                const response = await fetch(`/api/admin/stats/daily-revenue?from=${fromDate}&to=${toDate}`, {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+                const result = await response.json();
+
+                if (response.ok && result.status === 'success') {
+                    const data = result.data;
+                    const labels = data.map(d => {
+                        const date = new Date(d.ngay);
+                        return date.getDate() + '/' + (date.getMonth() + 1);
+                    });
+                    const values = data.map(d => d.doanh_thu_thuc_te);
+
+                    renderDailyChart(labels, values);
+                }
+            } catch (err) {
+                console.error("Lỗi load daily revenue:", err);
+            }
+        }
+
+        function renderDailyChart(labels, values) {
+            const ctx = document.getElementById('dailyRevenueChart').getContext('2d');
+            new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        label: 'Doanh thu (VND)',
+                        data: values,
+                        fill: true,
+                        backgroundColor: 'rgba(0, 188, 212, 0.15)',
+                        borderColor: '#00bcd4',
+                        borderWidth: 2,
+                        tension: 0.35,
+                        pointBackgroundColor: '#00bcd4',
+                        pointBorderColor: '#080b11',
+                        pointHoverRadius: 6
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        y: {
+                            grid: { color: 'rgba(255, 255, 255, 0.05)' },
+                            ticks: { color: '#a0aec0', font: { family: 'Outfit' } }
+                        },
+                        x: {
+                            grid: { color: 'rgba(255, 255, 255, 0.03)' },
+                            ticks: { color: '#a0aec0', font: { family: 'Outfit' } }
+                        }
+                    },
+                    plugins: {
+                        legend: { display: false }
+                    }
+                }
+            });
+        }
+
+        // 4. Tải Top Phim doanh thu cao nhất
+        async function loadTopMovies() {
+            try {
+                const token = localStorage.getItem('admin_token');
+                const response = await fetch('/api/admin/stats/bookings-by-movie', {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+                const result = await response.json();
+
+                if (response.ok && result.status === 'success') {
+                    const tbody = document.getElementById('top-movies-tbody');
+                    tbody.innerHTML = '';
+
+                    const top5 = result.data.slice(0, 5);
+                    if (top5.length === 0) {
+                        tbody.innerHTML = '<tr><td colspan="3" style="text-align: center; color: var(--text-muted);">Chưa có doanh thu bán vé</td></tr>';
+                        return;
+                    }
+
+                    top5.forEach(m => {
+                        tbody.innerHTML += `
+                            <tr>
+                                <td>
+                                    <div class="movie-cell">
+                                        <img src="${m.poster_url || '/img/default-poster.png'}" class="movie-poster-mini" alt="${m.tenphim}">
+                                        <div style="font-weight: 600;">${m.tenphim}</div>
+                                    </div>
+                                </td>
+                                <td>${m.so_ve} vé</td>
+                                <td class="text-success" style="font-weight: 700;">${new Intl.NumberFormat('vi-VN').format(m.tong_tien)}₫</td>
+                            </tr>
+                        `;
+                    });
+                }
+            } catch (err) {
+                console.error("Lỗi load top movies:", err);
+            }
+        }
+
+        // 5. Tải Top Rạp doanh thu cao nhất
+        async function loadTopTheaters() {
+            try {
+                const token = localStorage.getItem('admin_token');
+                const response = await fetch('/api/admin/stats/bookings-by-theater', {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+                const result = await response.json();
+
+                if (response.ok && result.status === 'success') {
+                    const tbody = document.getElementById('top-theaters-tbody');
+                    tbody.innerHTML = '';
+
+                    const top5 = result.data.slice(0, 5);
+                    if (top5.length === 0) {
+                        tbody.innerHTML = '<tr><td colspan="3" style="text-align: center; color: var(--text-muted);">Chưa có doanh thu theo rạp</td></tr>';
+                        return;
+                    }
+
+                    top5.forEach(r => {
+                        tbody.innerHTML += `
+                            <tr>
+                                <td style="font-weight: 600;">${r.tenrapphim}</td>
+                                <td>${r.so_ve} vé</td>
+                                <td class="text-success" style="font-weight: 700;">${new Intl.NumberFormat('vi-VN').format(r.tong_tien)}₫</td>
+                            </tr>
+                        `;
+                    });
+                }
+            } catch (err) {
+                console.error("Lỗi load top theaters:", err);
+            }
+        }
+
+        // 6. Xuất Báo Cáo Excel Tháng
+        async function exportMonthlyReport() {
+            const month = document.getElementById('report-month-input').value;
+            const msgEl = document.getElementById('export-msg');
+            const token = localStorage.getItem('admin_token');
+
+            if (!month) {
+                msgEl.style.color = '#ff4757';
+                msgEl.textContent = 'Vui lòng chọn tháng xuất báo cáo!';
+                return;
+            }
+
+            msgEl.style.color = 'var(--text-muted)';
+            msgEl.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Đang trích xuất Excel và tải xuống...';
+
+            try {
+                const response = await fetch(`/api/admin/reports/monthly?month=${month}`, {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+
+                if (response.ok) {
+                    const blob = await response.blob();
+                    const url = window.URL.createObjectURL(blob);
+                    const a = document.createElement('a');
+                    a.href = url;
+                    a.download = `BaoCao_Thang_${month}.xlsx`;
+                    document.body.appendChild(a);
+                    a.click();
+                    a.remove();
+                    window.URL.revokeObjectURL(url);
+                    
+                    msgEl.style.color = '#2ed573';
+                    msgEl.textContent = 'Tải báo cáo thành công!';
+                } else {
+                    const errText = await response.json();
+                    msgEl.style.color = '#ff4757';
+                    msgEl.textContent = errText.message || 'Lỗi xuất báo cáo!';
+                }
+            } catch (err) {
+                console.error(err);
+                msgEl.style.color = '#ff4757';
+                msgEl.textContent = 'Lỗi kết nối máy chủ.';
+            }
+        }
+    </script>
+}

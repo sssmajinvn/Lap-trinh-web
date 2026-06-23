@@ -61,14 +61,18 @@ namespace TicketBookingApi.Controllers.Admin
                 })
                 .ToListAsync();
 
-            var allUsers = new List<object>();
+            var allUsers = new List<dynamic>();
             allUsers.AddRange(staff);
             allUsers.AddRange(customers);
-            allUsers = allUsers
-                .OrderByDescending(u => (DateTime)u.GetType().GetProperty("ngaytao")!.GetValue(u)!)
+
+            var sortedUsers = allUsers
+                .OrderByDescending(u => {
+                    var date = u.ngaytao as DateTime?;
+                    return date ?? DateTime.MinValue;
+                })
                 .ToList();
 
-            return Ok(new { status = "success", total = allUsers.Count, data = allUsers });
+            return Ok(new { status = "success", total = sortedUsers.Count, data = sortedUsers });
         }
 
         [HttpGet("{id}")]

@@ -1,0 +1,139 @@
+@{
+    Layout = "_AdminLayout";
+    ViewData["Title"] = "Quản Lý Rạp & Phòng Chiếu";
+}
+
+<div class="module-header">
+    <div class="header-left">
+        <h3><i class="fa-solid fa-shop text-primary"></i> Hệ Thống Rạp & Phòng</h3>
+        <p class="text-muted">Quản lý danh sách rạp chiếu và cấu hình phòng chiếu phim.</p>
+    </div>
+    <div class="header-actions">
+        <button class="btn btn-primary" onclick="alert('Tính năng thêm rạp mới đang phát triển')">
+            <i class="fa-solid fa-plus"></i> Thêm Rạp Mới
+        </button>
+    </div>
+</div>
+
+<div class="row mt-4" id="theater-list-container">
+    <!-- Phân rạp sẽ được render ở đây -->
+    <div class="col-12 text-center p-5">
+        <i class="fa-solid fa-spinner fa-spin fa-3x mb-3"></i>
+        <p>Đang tải dữ liệu hệ thống rạp...</p>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            loadTheatersAndRooms();
+        });
+
+        async function loadTheatersAndRooms() {
+            const container = document.getElementById('theater-list-container');
+            const token = localStorage.getItem('admin_token');
+
+            try {
+                // 1. Load rooms (which includes theater info)
+                const response = await fetch('/api/admin/theaters/rooms', {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+
+                if (!response.ok) {
+                    if (response.status === 401) throw new Error("Phiên đăng nhập hết hạn.");
+                    throw new Error(`Lỗi (${response.status})`);
+                }
+
+                const result = await response.json();
+
+                if (response.ok && result.status === 'success') {
+                    const rooms = result.data;
+                    
+                    // Group rooms by theater
+                    const theaters = {};
+                    rooms.forEach(r => {
+                        if (!theaters[r.marapphim]) {
+                            theaters[r.marapphim] = {
+                                id: r.marapphim,
+                                name: r.tenrapphim,
+                                rooms: []
+                            };
+                        }
+                        theaters[r.marapphim].rooms.push(r);
+                    });
+
+                    container.innerHTML = '';
+                    
+                    for (const id in theaters) {
+                        const t = theaters[id];
+                        const theaterHtml = `
+                            <div class="col-md-6 mb-4">
+                                <div class="data-card h-100">
+                                    <div class="card-header d-flex justify-content-between align-items-center mb-3">
+                                        <h4 class="m-0"><i class="fa-solid fa-building-columns text-accent"></i> ${t.name}</h4>
+                                        <span class="badge" style="background: var(--color-primary);">${t.rooms.length} Phòng</span>
+                                    </div>
+                                    <div class="admin-table-wrapper">
+                                        <table class="admin-table table-sm">
+                                            <thead>
+                                                <tr>
+                                                    <th>Mã Phòng</th>
+                                                    <th>Tên Phòng</th>
+                                                    <th>Số Ghế</th>
+                                                    <th>Thao Tác</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                ${t.rooms.map(r => `
+                                                    <tr>
+                                                        <td><code>${r.maphong}</code></td>
+                                                        <td style="font-weight:600">${r.tenphong}</td>
+                                                        <td><i class="fa-solid fa-chair text-muted"></i> ${r.soluongghe}</td>
+                                                        <td>
+                                                            <button class="btn btn-secondary btn-sm" onclick="alert('Quản lý sơ đồ ghế cho phòng: ' + '${r.tenphong}')">
+                                                                <i class="fa-solid fa-gears"></i>
+                                                            </button>
+                                                        </td>
+                                                    </tr>
+                                                `).join('')}
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                </div>
+                            </div>
+                        `;
+                        container.innerHTML += theaterHtml;
+                    }
+                    
+                    if (Object.keys(theaters).length === 0) {
+                        container.innerHTML = '<div class="col-12 text-center p-5"><p>Chưa có dữ liệu rạp chiếu.</p></div>';
+                    }
+                }
+            } catch (err) {
+                container.innerHTML = `<div class="col-12 text-center p-5 text-danger">Lỗi kết nối: ${err.message}</div>`;
+            }
+        }
+    </script>
+}
+
+<style>
+    .data-card {
+        background: var(--glass-bg);
+        border: 1px solid var(--glass-border);
+        border-radius: 12px;
+        padding: 20px;
+        transition: transform 0.3s ease;
+    }
+    .data-card:hover {
+        transform: translateY(-5px);
+    }
+    .card-header h4 {
+        font-size: 1.1rem;
+        font-weight: 700;
+        color: #fff;
+    }
+    .admin-table.table-sm th, .admin-table.table-sm td {
+        padding: 10px;
+        font-size: 0.9rem;
+    }
+</style>

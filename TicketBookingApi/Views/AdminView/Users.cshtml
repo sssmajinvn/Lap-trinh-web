@@ -1,0 +1,190 @@
+@{
+    Layout = "_AdminLayout";
+    ViewData["Title"] = "Quản Lý Người Dùng & Tài Khoản";
+}
+
+<div class="module-header" style="justify-content: space-between; align-items: flex-end;">
+    <div class="header-left">
+        <h3><i class="fa-solid fa-users-gear text-info"></i> Hệ Thống Người Dùng</h3>
+        <div class="tab-header mt-3" style="border:none; margin:0; background: rgba(255,255,255,0.03); border-radius: 8px; padding: 4px;">
+            <button class="tab-btn active" id="tabCustomers" onclick="switchUserTab('customers')">Khách hàng</button>
+            <button class="tab-btn" id="tabStaff" onclick="switchUserTab('staff')">Nhân viên</button>
+        </div>
+    </div>
+    <div class="header-actions">
+        <button class="btn btn-primary" id="btnAddStaff" style="display:none" onclick="addStaffModal()">
+            <i class="fa-solid fa-user-plus"></i> Thêm Nhân Viên
+        </button>
+    </div>
+</div>
+
+<div class="data-card mt-4">
+    <div class="admin-table-wrapper">
+        <table class="admin-table">
+            <thead>
+                <tr id="user-table-header">
+                    <!-- Sẽ được thay đổi theo tab -->
+                </tr>
+            </thead>
+            <tbody id="user-list-tbody">
+                <tr><td colspan="6" style="text-align: center; padding: 3rem;"><i class="fa-solid fa-spinner fa-spin fa-2x"></i></td></tr>
+            </tbody>
+        </table>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        let currentTab = 'customers';
+
+        document.addEventListener('DOMContentLoaded', function() {
+            switchUserTab('customers');
+        });
+
+        function switchUserTab(tab) {
+            currentTab = tab;
+            document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+            const btnAddStaff = document.getElementById('btnAddStaff');
+
+            if (tab === 'customers') {
+                document.getElementById('tabCustomers').classList.add('active');
+                btnAddStaff.style.display = 'none';
+                renderCustomersHeader();
+            } else {
+                document.getElementById('tabStaff').classList.add('active');
+                btnAddStaff.style.display = 'block';
+                renderStaffHeader();
+            }
+            loadUsers();
+        }
+
+        function renderCustomersHeader() {
+            document.getElementById('user-table-header').innerHTML = `
+                <th>ID</th>
+                <th>Thông tin khách hàng</th>
+                <th>Liên hệ</th>
+                <th>Ngày đăng ký</th>
+                <th>Trạng thái</th>
+                <th>Thao tác</th>
+            `;
+        }
+
+        function renderStaffHeader() {
+            document.getElementById('user-table-header').innerHTML = `
+                <th>ID</th>
+                <th>Họ tên nhân viên</th>
+                <th>Email</th>
+                <th>Vai trò</th>
+                <th>Nhập ngũ</th>
+                <th>Thao tác</th>
+            `;
+        }
+
+        async function loadUsers() {
+            const tbody = document.getElementById('user-list-tbody');
+            const token = localStorage.getItem('admin_token');
+            tbody.innerHTML = '<tr><td colspan="6" style="text-align: center; padding: 2rem;"><i class="fa-solid fa-spinner fa-spin"></i> Đang tải...</td></tr>';
+
+            try {
+                const response = await fetch('/api/admin/users', {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+
+                if (!response.ok) {
+                    if (response.status === 401) throw new Error("Phiên đăng nhập hết hạn hoặc bạn không có quyền Admin.");
+                    if (response.status === 403) throw new Error("Tài khoản của bạn không được phép truy cập module này.");
+                    throw new Error(`Lỗi máy chủ (${response.status}) - Không thể tải danh sách người dùng.`);
+                }
+
+                const result = await response.json();
+
+                if (response.ok && result.status === 'success') {
+                    const filtered = result.data.filter(u => u.loai === (currentTab === 'customers' ? 'khach' : 'nhanvien'));
+                    tbody.innerHTML = '';
+
+                    if (filtered.length === 0) {
+                        tbody.innerHTML = '<tr><td colspan="6" class="text-center">Không có dữ liệu phù hợp</td></tr>';
+                        return;
+                    }
+
+                    filtered.forEach(u => {
+                        if (currentTab === 'customers') {
+                            tbody.innerHTML += `
+                                <tr>
+                                    <td><small class="text-muted">${u.id || ''}</small></td>
+                                    <td>
+                                        <div style="font-weight:600">${u.hoten}</div>
+                                        <div style="font-size:0.8rem; color:var(--color-accent)">Hạng: ${u.hangkhachhang || 'Thường'}</div>
+                                    </td>
+                                    <td>
+                                        <div style="font-size:0.9rem">${u.email}</div>
+                                        <div style="font-size:0.8rem; color:var(--text-muted)">${u.sdt || 'N/A'}</div>
+                                    </td>
+                                    <td>${new Date(u.ngaytao).toLocaleDateString('vi-VN')}</td>
+                                    <td><span class="status-pills ${u.trangthai === 'active' ? 'status-active' : 'status-inactive'}">${u.trangthai}</span></td>
+                                    <td>
+                                        <button class="btn btn-secondary btn-sm" onclick="viewUserDetail('${u.id}')"><i class="fa-solid fa-eye"></i></button>
+                                        <button class="btn btn-outline btn-sm text-danger" onclick="lockUser('${u.id}', '${u.trangthai}')"><i class="fa-solid ${u.trangthai === 'active' ? 'fa-lock' : 'fa-lock-open'}"></i></button>
+                                    </td>
+                                </tr>
+                            `;
+                        } else {
+                            tbody.innerHTML += `
+                                <tr>
+                                    <td><small class="text-muted">${u.id_nhanvien || u.id}</small></td>
+                                    <td><div style="font-weight:600">${u.hoten}</div></td>
+                                    <td>${u.email}</td>
+                                    <td><span class="badge" style="background: var(--color-primary);">${u.vaitro}</span></td>
+                                    <td>${u.ngaytao ? new Date(u.ngaytao).toLocaleDateString('vi-VN') : 'N/A'}</td>
+                                    <td>
+                                        <button class="btn btn-secondary btn-sm" onclick="alert('Chỉnh sửa nhân viên: ' + '${u.mataikhoan}')"><i class="fa-solid fa-user-pen"></i></button>
+                                    </td>
+                                </tr>
+                            `;
+                        }
+                    });
+                }
+            } catch (e) {
+                tbody.innerHTML = `<tr><td colspan="6" class="text-center text-danger">Lỗi: ${e.message}</td></tr>`;
+            }
+        }
+
+        async function lockUser(userId, currentStatus) {
+            const newStatus = currentStatus === 'active' ? 'locked' : 'active';
+            if (confirm(`Bạn có muốn ${newStatus === 'active' ? 'mở khóa' : 'khóa'} tài khoản này?`)) {
+                const token = localStorage.getItem('admin_token');
+                try {
+                    const res = await fetch(`/api/admin/users/${userId}/status`, {
+                        method: 'PUT',
+                        headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ trangthai: newStatus })
+                    });
+                    
+                    if (res.ok) {
+                        alert("Cập nhật thành công!");
+                        loadUsers();
+                    } else {
+                        const err = await res.json();
+                        alert("Lỗi: " + (err.message || "Không thể cập nhật trạng thái"));
+                    }
+                } catch (e) {
+                    alert("Lỗi kết nối: " + e.message);
+                }
+            }
+        }
+
+        function viewUserDetail(username) {
+            alert("Đang tải chi tiết hồ sơ, lịch sử đặt vé và tổng chi tiêu của user: " + username);
+        }
+
+        function addStaffModal() {
+            alert("Màn hình thêm nhân viên mới đang được hoàn thiện.");
+        }
+    </script>
+}
+
+<style>
+    .status-pills { padding: 4px 10px; border-radius: 20px; font-size: 0.75rem; font-weight: 600; text-transform: uppercase; }
+    .status-active { background: rgba(46, 213, 115, 0.15); color: #2ed573; border: 1px solid rgba(46, 213, 115, 0.3); }
+    .status-inactive { background: rgba(255, 71, 87, 0.15); color: #ff4757; border: 1px solid rgba(255, 71, 87, 0.3); }
+</style>

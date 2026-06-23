@@ -219,11 +219,11 @@
                 </div>
                 <div class="info-row">
                     <span class="info-label">Suất chiếu</span>
-                    <span class="info-value" id="order-showtime">Đang tải...</span>
+                    <span class="info-value">Lật Mặt 7 - 19:30</span>
                 </div>
                 <div class="info-row">
                     <span class="info-label">Tổng cộng</span>
-                    <span class="info-value price" id="total-price">...₫</span>
+                    <span class="info-value price" id="total-price">250.000đ</span>
                 </div>
             </div>
 
@@ -251,44 +251,61 @@
         let timeLeft = 300; 
         const countdownElement = document.getElementById('countdown');
 
-        const timer = setInterval(() => {
+        const timer = setInterval(async () => {
             const minutes = Math.floor(timeLeft / 60);
             const seconds = timeLeft % 60;
             countdownElement.textContent = `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
 
             if (timeLeft <= 0) {
                 clearInterval(timer);
-                alert('Hết thời gian giữ vé! Bạn sẽ được đưa về trang chủ.');
+                clearInterval(checkStatus);
+                // Tự động gọi API cancel để giải phóng ghế ngay lập tức
+                await cancelViaApi();
+                alert('Hết thời gian giữ vé! Ghế đã được trả lại. Bạn sẽ được đưa về trang chủ.');
                 window.location.href = '/';
             }
             timeLeft--;
         }, 1000);
 
-        // Polling kiểm tra trạng thái đơn hàng
-        const checkStatus = setInterval(async () => {
+        // Polling kiểm tra trạng thái đơn hàng và load thông tin chi tiết
+        async function fetchOrderDetails() {
             try {
                 const response = await fetch(`/api/bookings/status/${orderId}`);
-                const result = await response.json();
+                if (!response.ok) return;
                 
-                if (response.ok && result.status === 'success') {
-                    // Cập nhật thông tin UI
-                    document.getElementById('total-price').textContent = new Intl.NumberFormat('vi-VN').format(result.data.tongtien) + "₫";
-                    document.getElementById('order-showtime').textContent = `${result.data.movieTitle} - ${result.data.showtime}`;
+                const result = await response.json();
+                const data = result.data;
+                
+                if (data) {
+                    // Cập nhật thông tin phim
+                    const movieInfo = document.querySelector('.info-row:nth-child(2) .info-value');
+                    if (movieInfo) movieInfo.textContent = data.tenphim || "Thông tin phim";
+                    
+                    // Cập nhật tổng tiền
+                    const totalPrice = document.getElementById('total-price');
+                    if (totalPrice) {
+                        totalPrice.textContent = new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(data.tongtien);
+                    }
 
-                    if (result.data.trangthai === "active") {
+                    // Tự động chuyển hướng nếu đã thanh toán hoặc bị hủy
+                    if (data.trangthai === "active") {
                         clearInterval(checkStatus);
                         clearInterval(timer);
                         window.location.href = `/Home/Success?orderId=${orderId}`;
-                    } else if (result.data.trangthai === "cancelled" || result.data.trangthai === "canceled") {
+                    } else if (data.trangthai === "canceled") {
                         clearInterval(checkStatus);
-                        alert("Đơn hàng đã bị hủy hoặc hết hạn.");
+                        alert("Đơn hàng đã bị hủy do hết thời gian giữ chỗ.");
                         window.location.href = '/';
                     }
                 }
             } catch (err) {
-                console.error("Lỗi check status:", err);
+                console.error("Lỗi tải thông tin đơn hàng:", err);
             }
-        }, 3000); // Check mỗi 3 giây
+        }
+
+        // Gọi lần đầu và thiết lập interval
+        fetchOrderDetails();
+        const checkStatus = setInterval(fetchOrderDetails, 3000); // Check mỗi 3 giây
 
         async function processPayment() {
             const token = localStorage.getItem('jwt_token');
@@ -319,19 +336,38 @@
             }
         }
 
+        async function cancelViaApi() {
+            const token = localStorage.getItem('jwt_token');
+            if (!token) return false;
+            try {
+                const res = await fetch(`/api/bookings/${orderId}/cancel`, {
+                    method: 'POST',
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+                return res.ok;
+            } catch (err) {
+                console.error('Lỗi huỷ đơn:', err);
+                return false;
+            }
+        }
+
         async function cancelBooking() {
-            if(confirm("Bạn có chắc muốn hủy đơn hàng này? Ghế sẽ được giải phóng.")) {
-                const token = localStorage.getItem('jwt_token');
-                try {
-                    await fetch(`/api/bookings/${orderId}/cancel`, {
-                        method: 'POST',
-                        headers: { 'Authorization': `Bearer ${token}` }
-                    });
-                    window.location.href = '/';
-                } catch (err) {
-                    console.error(err);
-                    window.location.href = '/';
+            if (confirm('Bạn có chắc muốn hủy đơn hàng này? Ghế sẽ được trả lại cho người khác.')) {
+                const btn = document.querySelector('.btn-outline');
+                btn.disabled = true;
+                btn.textContent = 'Đang hủy...';
+
+                const success = await cancelViaApi();
+
+                clearInterval(timer);
+                clearInterval(checkStatus);
+
+                if (success) {
+                    alert('Đơn hàng đã được hủy thành công. Ghế đã được trả lại.');
+                } else {
+                    alert('Không thể hủy đơn hàng qua API. Đơn sẽ tự hết hạn sau 5 phút.');
                 }
+                window.location.href = '/';
             }
         }
     </script>

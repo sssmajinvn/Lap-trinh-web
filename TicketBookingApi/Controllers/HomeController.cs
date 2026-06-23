@@ -121,5 +121,10 @@ namespace TicketBookingApi.Controllers
             ViewData["OrderId"] = orderId;
             return View();
         }
+
+        public IActionResult Profile()
+        {
+            return View();
+        }
     }
 }

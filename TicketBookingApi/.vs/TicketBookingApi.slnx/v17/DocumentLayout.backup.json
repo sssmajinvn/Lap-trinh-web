@@ -3,6 +3,46 @@
   "WorkspaceRootPath": "D:\\LapTrinhWeb .NetCore\\Do an .net\\Lap-trinh-web\\TicketBookingApi\\",
   "Documents": [
     {
+      "AbsoluteMoniker": "D:0:0:{F0EF037B-74B9-975C-10E8-1796C04B0545}|TicketBookingApi.csproj|d:\\laptrinhweb .netcore\\do an .net\\lap-trinh-web\\ticketbookingapi\\views\\adminview\\login.cshtml||{40D31677-CBC0-4297-A9EF-89D907823A98}",
+      "RelativeMoniker": "D:0:0:{F0EF037B-74B9-975C-10E8-1796C04B0545}|TicketBookingApi.csproj|solutionrelative:views\\adminview\\login.cshtml||{40D31677-CBC0-4297-A9EF-89D907823A98}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{F0EF037B-74B9-975C-10E8-1796C04B0545}|TicketBookingApi.csproj|d:\\laptrinhweb .netcore\\do an .net\\lap-trinh-web\\ticketbookingapi\\controllers\\admin\\showtimeadmincontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{F0EF037B-74B9-975C-10E8-1796C04B0545}|TicketBookingApi.csproj|solutionrelative:controllers\\admin\\showtimeadmincontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{F0EF037B-74B9-975C-10E8-1796C04B0545}|TicketBookingApi.csproj|d:\\laptrinhweb .netcore\\do an .net\\lap-trinh-web\\ticketbookingapi\\controllers\\admin\\authadmincontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{F0EF037B-74B9-975C-10E8-1796C04B0545}|TicketBookingApi.csproj|solutionrelative:controllers\\admin\\authadmincontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{F0EF037B-74B9-975C-10E8-1796C04B0545}|TicketBookingApi.csproj|d:\\laptrinhweb .netcore\\do an .net\\lap-trinh-web\\ticketbookingapi\\controllers\\authcontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{F0EF037B-74B9-975C-10E8-1796C04B0545}|TicketBookingApi.csproj|solutionrelative:controllers\\authcontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{F0EF037B-74B9-975C-10E8-1796C04B0545}|TicketBookingApi.csproj|d:\\laptrinhweb .netcore\\do an .net\\lap-trinh-web\\ticketbookingapi\\controllers\\moviescontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{F0EF037B-74B9-975C-10E8-1796C04B0545}|TicketBookingApi.csproj|solutionrelative:controllers\\moviescontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{F0EF037B-74B9-975C-10E8-1796C04B0545}|TicketBookingApi.csproj|d:\\laptrinhweb .netcore\\do an .net\\lap-trinh-web\\ticketbookingapi\\controllers\\bookingscontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{F0EF037B-74B9-975C-10E8-1796C04B0545}|TicketBookingApi.csproj|solutionrelative:controllers\\bookingscontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{F0EF037B-74B9-975C-10E8-1796C04B0545}|TicketBookingApi.csproj|d:\\laptrinhweb .netcore\\do an .net\\lap-trinh-web\\ticketbookingapi\\controllers\\homecontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{F0EF037B-74B9-975C-10E8-1796C04B0545}|TicketBookingApi.csproj|solutionrelative:controllers\\homecontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{F0EF037B-74B9-975C-10E8-1796C04B0545}|TicketBookingApi.csproj|d:\\laptrinhweb .netcore\\do an .net\\lap-trinh-web\\ticketbookingapi\\controllers\\admincontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{F0EF037B-74B9-975C-10E8-1796C04B0545}|TicketBookingApi.csproj|solutionrelative:controllers\\admincontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{F0EF037B-74B9-975C-10E8-1796C04B0545}|TicketBookingApi.csproj|d:\\laptrinhweb .netcore\\do an .net\\lap-trinh-web\\ticketbookingapi\\controllers\\admin\\movieadmincontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{F0EF037B-74B9-975C-10E8-1796C04B0545}|TicketBookingApi.csproj|solutionrelative:controllers\\admin\\movieadmincontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{F0EF037B-74B9-975C-10E8-1796C04B0545}|TicketBookingApi.csproj|d:\\laptrinhweb .netcore\\do an .net\\lap-trinh-web\\ticketbookingapi\\views\\home\\booking.cshtml||{40D31677-CBC0-4297-A9EF-89D907823A98}",
+      "RelativeMoniker": "D:0:0:{F0EF037B-74B9-975C-10E8-1796C04B0545}|TicketBookingApi.csproj|solutionrelative:views\\home\\booking.cshtml||{40D31677-CBC0-4297-A9EF-89D907823A98}"
+    },
+    {
       "AbsoluteMoniker": "D:0:0:{F0EF037B-74B9-975C-10E8-1796C04B0545}|TicketBookingApi.csproj|d:\\laptrinhweb .netcore\\do an .net\\lap-trinh-web\\ticketbookingapi\\program.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
       "RelativeMoniker": "D:0:0:{F0EF037B-74B9-975C-10E8-1796C04B0545}|TicketBookingApi.csproj|solutionrelative:program.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
     },
@@ -13,10 +53,6 @@
     {
       "AbsoluteMoniker": "D:0:0:{F0EF037B-74B9-975C-10E8-1796C04B0545}|TicketBookingApi.csproj|d:\\laptrinhweb .netcore\\do an .net\\lap-trinh-web\\ticketbookingapi\\appsettings.json||{90A6B3A7-C1A3-4009-A288-E2FF89E96FA0}",
       "RelativeMoniker": "D:0:0:{F0EF037B-74B9-975C-10E8-1796C04B0545}|TicketBookingApi.csproj|solutionrelative:appsettings.json||{90A6B3A7-C1A3-4009-A288-E2FF89E96FA0}"
-    },
-    {
-      "AbsoluteMoniker": "D:0:0:{F0EF037B-74B9-975C-10E8-1796C04B0545}|TicketBookingApi.csproj|d:\\laptrinhweb .netcore\\do an .net\\lap-trinh-web\\ticketbookingapi\\controllers\\moviescontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
-      "RelativeMoniker": "D:0:0:{F0EF037B-74B9-975C-10E8-1796C04B0545}|TicketBookingApi.csproj|solutionrelative:controllers\\moviescontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
     }
   ],
   "DocumentGroupContainers": [
@@ -31,19 +67,136 @@
             {
               "$type": "Document",
               "DocumentIndex": 0,
+              "Title": "Login.cshtml",
+              "DocumentMoniker": "D:\\LapTrinhWeb .NetCore\\Do an .net\\Lap-trinh-web\\TicketBookingApi\\Views\\AdminView\\Login.cshtml",
+              "RelativeDocumentMoniker": "Views\\AdminView\\Login.cshtml",
+              "ToolTip": "D:\\LapTrinhWeb .NetCore\\Do an .net\\Lap-trinh-web\\TicketBookingApi\\Views\\AdminView\\Login.cshtml",
+              "RelativeToolTip": "Views\\AdminView\\Login.cshtml",
+              "ViewState": "AgIAAJYAAAAAAAAAAAAAAA8AAAAEAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000759|",
+              "WhenOpened": "2026-06-22T19:06:25.251Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 2,
+              "Title": "AuthAdminController.cs",
+              "DocumentMoniker": "D:\\LapTrinhWeb .NetCore\\Do an .net\\Lap-trinh-web\\TicketBookingApi\\Controllers\\Admin\\AuthAdminController.cs",
+              "RelativeDocumentMoniker": "Controllers\\Admin\\AuthAdminController.cs",
+              "ToolTip": "D:\\LapTrinhWeb .NetCore\\Do an .net\\Lap-trinh-web\\TicketBookingApi\\Controllers\\Admin\\AuthAdminController.cs",
+              "RelativeToolTip": "Controllers\\Admin\\AuthAdminController.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAABIAAABbAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-06-22T18:38:51.792Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 1,
+              "Title": "ShowtimeAdminController.cs",
+              "DocumentMoniker": "D:\\LapTrinhWeb .NetCore\\Do an .net\\Lap-trinh-web\\TicketBookingApi\\Controllers\\Admin\\ShowtimeAdminController.cs",
+              "RelativeDocumentMoniker": "Controllers\\Admin\\ShowtimeAdminController.cs",
+              "ToolTip": "D:\\LapTrinhWeb .NetCore\\Do an .net\\Lap-trinh-web\\TicketBookingApi\\Controllers\\Admin\\ShowtimeAdminController.cs",
+              "RelativeToolTip": "Controllers\\Admin\\ShowtimeAdminController.cs",
+              "ViewState": "AgIAAJMAAAAAAAAAAAAowAAAAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-06-22T18:23:52.709Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 5,
+              "Title": "BookingsController.cs",
+              "DocumentMoniker": "D:\\LapTrinhWeb .NetCore\\Do an .net\\Lap-trinh-web\\TicketBookingApi\\Controllers\\BookingsController.cs",
+              "RelativeDocumentMoniker": "Controllers\\BookingsController.cs",
+              "ToolTip": "D:\\LapTrinhWeb .NetCore\\Do an .net\\Lap-trinh-web\\TicketBookingApi\\Controllers\\BookingsController.cs",
+              "RelativeToolTip": "Controllers\\BookingsController.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-06-22T18:09:31.337Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 3,
+              "Title": "AuthController.cs",
+              "DocumentMoniker": "D:\\LapTrinhWeb .NetCore\\Do an .net\\Lap-trinh-web\\TicketBookingApi\\Controllers\\AuthController.cs",
+              "RelativeDocumentMoniker": "Controllers\\AuthController.cs",
+              "ToolTip": "D:\\LapTrinhWeb .NetCore\\Do an .net\\Lap-trinh-web\\TicketBookingApi\\Controllers\\AuthController.cs",
+              "RelativeToolTip": "Controllers\\AuthController.cs",
+              "ViewState": "AgIAAP4AAAAAAAAAAAAmwAAAAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-06-22T18:06:21.409Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 7,
+              "Title": "AdminController.cs",
+              "DocumentMoniker": "D:\\LapTrinhWeb .NetCore\\Do an .net\\Lap-trinh-web\\TicketBookingApi\\Controllers\\AdminController.cs",
+              "RelativeDocumentMoniker": "Controllers\\AdminController.cs",
+              "ToolTip": "D:\\LapTrinhWeb .NetCore\\Do an .net\\Lap-trinh-web\\TicketBookingApi\\Controllers\\AdminController.cs",
+              "RelativeToolTip": "Controllers\\AdminController.cs",
+              "ViewState": "AgIAACAAAAAAAAAAAAAgwAAAAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-06-22T18:05:00.463Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 6,
+              "Title": "HomeController.cs",
+              "DocumentMoniker": "D:\\LapTrinhWeb .NetCore\\Do an .net\\Lap-trinh-web\\TicketBookingApi\\Controllers\\HomeController.cs",
+              "RelativeDocumentMoniker": "Controllers\\HomeController.cs",
+              "ToolTip": "D:\\LapTrinhWeb .NetCore\\Do an .net\\Lap-trinh-web\\TicketBookingApi\\Controllers\\HomeController.cs",
+              "RelativeToolTip": "Controllers\\HomeController.cs",
+              "ViewState": "AgIAABoAAAAAAAAAAAAgwBMAAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-06-22T18:03:21.756Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 9,
+              "Title": "Booking.cshtml",
+              "DocumentMoniker": "D:\\LapTrinhWeb .NetCore\\Do an .net\\Lap-trinh-web\\TicketBookingApi\\Views\\Home\\Booking.cshtml",
+              "RelativeDocumentMoniker": "Views\\Home\\Booking.cshtml",
+              "ToolTip": "D:\\LapTrinhWeb .NetCore\\Do an .net\\Lap-trinh-web\\TicketBookingApi\\Views\\Home\\Booking.cshtml",
+              "RelativeToolTip": "Views\\Home\\Booking.cshtml",
+              "ViewState": "AgIAAAMAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000759|",
+              "WhenOpened": "2026-06-22T18:02:05Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 8,
+              "Title": "MovieAdminController.cs",
+              "DocumentMoniker": "D:\\LapTrinhWeb .NetCore\\Do an .net\\Lap-trinh-web\\TicketBookingApi\\Controllers\\Admin\\MovieAdminController.cs",
+              "RelativeDocumentMoniker": "Controllers\\Admin\\MovieAdminController.cs",
+              "ToolTip": "D:\\LapTrinhWeb .NetCore\\Do an .net\\Lap-trinh-web\\TicketBookingApi\\Controllers\\Admin\\MovieAdminController.cs",
+              "RelativeToolTip": "Controllers\\Admin\\MovieAdminController.cs",
+              "ViewState": "AgIAADsAAAAAAAAAAAAgwAAAAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-06-22T17:58:18.589Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 10,
               "Title": "Program.cs",
               "DocumentMoniker": "D:\\LapTrinhWeb .NetCore\\Do an .net\\Lap-trinh-web\\TicketBookingApi\\Program.cs",
               "RelativeDocumentMoniker": "Program.cs",
               "ToolTip": "D:\\LapTrinhWeb .NetCore\\Do an .net\\Lap-trinh-web\\TicketBookingApi\\Program.cs",
               "RelativeToolTip": "Program.cs",
-              "ViewState": "AgIAAHcAAAAAAAAAAAAAAIIAAAAaAAAAAAAAAA==",
+              "ViewState": "AgIAAIMAAAAAAAAAAAAAAJcAAAAFAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
               "WhenOpened": "2026-06-21T18:28:15.931Z",
               "EditorCaption": ""
             },
             {
               "$type": "Document",
-              "DocumentIndex": 1,
+              "DocumentIndex": 11,
               "Title": "launchSettings.json",
               "DocumentMoniker": "D:\\LapTrinhWeb .NetCore\\Do an .net\\Lap-trinh-web\\TicketBookingApi\\Properties\\launchSettings.json",
               "RelativeDocumentMoniker": "Properties\\launchSettings.json",
@@ -51,12 +204,11 @@
               "RelativeToolTip": "Properties\\launchSettings.json",
               "ViewState": "AgIAAAMAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.001642|",
-              "WhenOpened": "2026-06-21T18:28:07.77Z",
-              "EditorCaption": ""
+              "WhenOpened": "2026-06-21T18:28:07.77Z"
             },
             {
               "$type": "Document",
-              "DocumentIndex": 2,
+              "DocumentIndex": 12,
               "Title": "appsettings.json",
               "DocumentMoniker": "D:\\LapTrinhWeb .NetCore\\Do an .net\\Lap-trinh-web\\TicketBookingApi\\appsettings.json",
               "RelativeDocumentMoniker": "appsettings.json",
@@ -64,18 +216,17 @@
               "RelativeToolTip": "appsettings.json",
               "ViewState": "AgIAAAkAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.001642|",
-              "WhenOpened": "2026-06-21T18:27:54.231Z",
-              "EditorCaption": ""
+              "WhenOpened": "2026-06-21T18:27:54.231Z"
             },
             {
               "$type": "Document",
-              "DocumentIndex": 3,
+              "DocumentIndex": 4,
               "Title": "MoviesController.cs",
               "DocumentMoniker": "D:\\LapTrinhWeb .NetCore\\Do an .net\\Lap-trinh-web\\TicketBookingApi\\Controllers\\MoviesController.cs",
               "RelativeDocumentMoniker": "Controllers\\MoviesController.cs",
               "ToolTip": "D:\\LapTrinhWeb .NetCore\\Do an .net\\Lap-trinh-web\\TicketBookingApi\\Controllers\\MoviesController.cs",
               "RelativeToolTip": "Controllers\\MoviesController.cs",
-              "ViewState": "AgIAAEAAAAAAAAAAAAAkwCgAAAARAAAAAAAAAA==",
+              "ViewState": "AgIAACEAAAAAAAAAAAAYwCgAAAARAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
               "WhenOpened": "2026-06-21T18:10:50.773Z",
               "EditorCaption": ""

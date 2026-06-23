@@ -123,10 +123,62 @@ namespace TicketBookingApi.Controllers.Admin
             await _context.SaveChangesAsync();
             return Ok(new { status = "success", message = "Thêm phim thành công", movieId = phim.Maphim });
         }
+
+        // PUT: api/admin/movies/{id}
+        [HttpPut("{id}")]
+        public async Task<IActionResult> UpdateMovie(string id, [FromBody] MovieUpdateDto dto)
+        {
+            var phim = await _context.Phims.FirstOrDefaultAsync(m => m.Maphim == id);
+            if (phim == null) return NotFound(new { status = "error", message = "Không tìm thấy phim" });
+
+            if (!string.IsNullOrWhiteSpace(dto.Tenphim)) phim.Tenphim = dto.Tenphim;
+            if (dto.Thoiluong > 0) phim.Thoiluong = dto.Thoiluong;
+            if (dto.Gioihantuoi >= 0) phim.Gioihantuoi = dto.Gioihantuoi;
+            if (dto.Ngayramat != default) phim.Ngayramat = dto.Ngayramat;
+            if (!string.IsNullOrWhiteSpace(dto.Trangthai)) phim.Trangthai = dto.Trangthai;
+            if (!string.IsNullOrWhiteSpace(dto.PosterUrl)) phim.PosterUrl = dto.PosterUrl;
+            if (!string.IsNullOrWhiteSpace(dto.TrailerUrl)) phim.TrailerUrl = dto.TrailerUrl;
+            if (!string.IsNullOrWhiteSpace(dto.Mota)) phim.Mota = dto.Mota;
+
+            await _context.SaveChangesAsync();
+            return Ok(new { status = "success", message = "Cập nhật phim thành công" });
+        }
+
+        // DELETE: api/admin/movies/{id}
+        [HttpDelete("{id}")]
+        public async Task<IActionResult> DeleteMovie(string id)
+        {
+            var phim = await _context.Phims.Include(p => p.Lichchieus).FirstOrDefaultAsync(m => m.Maphim == id);
+            if (phim == null) return NotFound(new { status = "error", message = "Phim không tồn tại" });
+
+            // Nếu phim đã có lịch chiếu, không cho xóa mà chỉ cho ẩn
+            if (phim.Lichchieus.Any())
+            {
+                phim.Trangthai = "hidden";
+                await _context.SaveChangesAsync();
+                return Ok(new { status = "success", message = "Phim đã có lịch chiếu nên đã được chuyển sang trạng thái Ẩn thay vì xóa." });
+            }
+
+            _context.Phims.Remove(phim);
+            await _context.SaveChangesAsync();
+            return Ok(new { status = "success", message = "Xóa phim thành công" });
+        }
     }
 
     public class AddMovieDto
     {
         public int TmdbId { get; set; }
+    }
+
+    public class MovieUpdateDto
+    {
+        public string Tenphim { get; set; }
+        public int Thoiluong { get; set; }
+        public int Gioihantuoi { get; set; }
+        public DateTime Ngayramat { get; set; }
+        public string Trangthai { get; set; }
+        public string PosterUrl { get; set; }
+        public string TrailerUrl { get; set; }
+        public string Mota { get; set; }
     }
 }

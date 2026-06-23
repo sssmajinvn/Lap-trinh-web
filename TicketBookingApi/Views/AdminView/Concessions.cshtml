@@ -1,0 +1,479 @@
+@{
+    Layout = "_AdminLayout";
+    ViewData["Title"] = "Quản Lý Sản Phẩm & Combo";
+}
+
+<div class="module-header" style="justify-content: space-between; align-items: flex-end;">
+    <div class="header-left">
+        <h3><i class="fa-solid fa-popcorn text-warning"></i> Quản Lý Bắp Nước & Phụ Kiện</h3>
+        <div class="tab-header mt-3" style="border:none; margin:0; background: rgba(255,255,255,0.03); border-radius: 8px; padding: 4px;">
+            <button class="tab-btn active" id="tabItems" onclick="switchTab('items')">Sản phẩm lẻ</button>
+            <button class="tab-btn" id="tabCombos" onclick="switchTab('combos')">Gói Combo</button>
+        </div>
+    </div>
+    <div class="header-actions" style="display: flex; gap: 10px;">
+        <button class="btn btn-outline" onclick="window.location.href='/Admin/Dashboard'">
+            <i class="fa-solid fa-arrow-left"></i> Quay lại
+        </button>
+        <button class="btn btn-primary" id="btnAddConcession" onclick="showAddModal()">
+            <i class="fa-solid fa-plus"></i> Thêm Mới
+        </button>
+    </div>
+</div>
+
+<div class="data-card mt-4">
+    <div class="admin-table-wrapper">
+        <table class="admin-table">
+            <thead>
+                <tr id="con-table-header">
+                    <!-- Sẽ được thay đổi theo tab -->
+                </tr>
+            </thead>
+            <tbody id="con-list-tbody">
+                <tr><td colspan="7" style="text-align: center; padding: 3rem;"><i class="fa-solid fa-spinner fa-spin fa-2x"></i></td></tr>
+            </tbody>
+        </table>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        let currentTab = 'items';
+
+        document.addEventListener('DOMContentLoaded', function() {
+            switchTab('items');
+        });
+
+        function switchTab(tab) {
+            currentTab = tab;
+            document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+            if (tab === 'items') {
+                document.getElementById('tabItems').classList.add('active');
+                renderItemsHeader();
+                loadItems();
+            } else {
+                document.getElementById('tabCombos').classList.add('active');
+                renderCombosHeader();
+                loadCombos();
+            }
+        }
+
+        function renderItemsHeader() {
+            document.getElementById('con-table-header').innerHTML = `
+                <th>Hình ảnh</th>
+                <th>Tên Sản Phẩm</th>
+                <th>Phân Loại</th>
+                <th>Đơn Giá</th>
+                <th>Tồn Kho</th>
+                <th>Trạng Thái</th>
+                <th>Thao Tác</th>
+            `;
+        }
+
+        function renderCombosHeader() {
+            document.getElementById('con-table-header').innerHTML = `
+                <th>Ảnh</th>
+                <th>Tên Gói</th>
+                <th>Mô tả</th>
+                <th>Giá bán</th>
+                <th>Trạng thái</th>
+                <th>Thao tác</th>
+            `;
+        }
+
+        async function loadItems() {
+            const tbody = document.getElementById('con-list-tbody');
+            const token = localStorage.getItem('admin_token');
+            tbody.innerHTML = '<tr><td colspan="7" style="text-align: center; padding: 3rem;"><i class="fa-solid fa-spinner fa-spin"></i> Đang tải sản phẩm...</td></tr>';
+
+            try {
+                const response = await fetch('/api/admin/items', {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+
+                if (!response.ok) {
+                    if (response.status === 401) throw new Error("Phiên đăng nhập hết hạn.");
+                    throw new Error(`Lỗi máy chủ (${response.status})`);
+                }
+
+                const result = await response.json();
+
+                if (response.ok && result.status === 'success') {
+                    tbody.innerHTML = '';
+                    result.data.forEach(i => {
+                        tbody.innerHTML += `
+                            <tr>
+                                <td><img src="${i.imageUrl || '/img/placeholder-con.jpg'}" style="width: 50px; height: 50px; object-fit: cover; border-radius: 8px; border: 1px solid var(--glass-border);"></td>
+                                <td><div style="font-weight:600">${i.name}</div></td>
+                                <td><span class="badge" style="background: rgba(255,255,255,0.05); color: #fff;">${i.itemType}</span></td>
+                                <td class="text-accent" style="font-weight:700">${new Intl.NumberFormat('vi-VN').format(i.price)}₫</td>
+                                <td>${i.stockQuantity} ${i.unit || ''}</td>
+                                <td><span class="status-pills ${i.isAvailable ? 'status-active' : 'status-inactive'}">${i.isAvailable ? 'Đang bán' : 'Hết hàng'}</span></td>
+                                <td>
+                                    <button class="btn btn-secondary btn-sm" onclick="showItemModal('${i.itemId}')"><i class="fa-solid fa-pen"></i></button>
+                                    <button class="btn btn-outline btn-sm text-danger" onclick="deleteItem('${i.itemId}')"><i class="fa-solid fa-trash"></i></button>
+                                </td>
+                            </tr>
+                        `;
+                    });
+                }
+            } catch (e) {
+                tbody.innerHTML = `<tr><td colspan="7" class="text-center text-danger">Lỗi: ${e.message}</td></tr>`;
+            }
+        }
+
+        async function loadCombos() {
+            const tbody = document.getElementById('con-list-tbody');
+            const token = localStorage.getItem('admin_token');
+            tbody.innerHTML = '<tr><td colspan="7" style="text-align: center; padding: 3rem;"><i class="fa-solid fa-spinner fa-spin"></i> Đang tải gói combo...</td></tr>';
+
+            try {
+                const response = await fetch('/api/admin/combos', {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+
+                if (!response.ok) {
+                    if (response.status === 401) throw new Error("Phiên đăng nhập hết hạn.");
+                    throw new Error(`Lỗi máy chủ (${response.status})`);
+                }
+
+                const result = await response.json();
+
+                if (response.ok && result.status === 'success') {
+                    tbody.innerHTML = '';
+                    result.data.forEach(c => {
+                        tbody.innerHTML += `
+                            <tr>
+                                <td><img src="${c.imageUrl || '/img/placeholder-combo.jpg'}" style="width: 60px; height: 60px; object-fit: cover; border-radius: 8px;"></td>
+                                <td><div style="font-weight:600">${c.name}</div></td>
+                                <td style="font-size: 0.85rem; color: var(--text-muted); line-height: 1.4; max-width: 250px;">${c.description || 'Chưa có mô tả'}</td>
+                                <td class="text-success" style="font-weight:700">${new Intl.NumberFormat('vi-VN').format(c.price)}₫</td>
+                                <td><span class="status-pills ${c.isAvailable ? 'status-active' : 'status-inactive'}">${c.isAvailable ? 'Đang bán' : 'Ngừng bán'}</span></td>
+                                <td>
+                                    <button class="btn btn-secondary btn-sm" onclick="showComboModal('${c.comboId}')"><i class="fa-solid fa-pen"></i></button>
+                                    <button class="btn btn-outline btn-sm text-danger" onclick="deleteCombo('${c.comboId}')"><i class="fa-solid fa-trash"></i></button>
+                                </td>
+                            </tr>
+                        `;
+                    });
+                }
+            } catch (e) {
+                tbody.innerHTML = `<tr><td colspan="7" class="text-center text-danger">Lỗi: ${e.message}</td></tr>`;
+            }
+        }
+
+        function showAddModal() {
+            if (currentTab === 'items') showItemModal();
+            else showComboModal();
+        }
+
+        // ================= ITEM MODAL LOGIC =================
+        let editingItemId = null;
+        async function showItemModal(id = null) {
+            editingItemId = id;
+            const modal = document.getElementById('item-modal');
+            const form = document.getElementById('item-form');
+            form.reset();
+            
+            if (id) {
+                const token = localStorage.getItem('admin_token');
+                const res = await fetch(`/api/admin/items`); // Giả định API trả về list, chúng ta lấy item tương ứng (hoặc thêm GET by ID)
+                const result = await res.json();
+                const item = result.data.find(x => x.itemId == id);
+                if (item) {
+                    document.getElementById('itemName').value = item.name;
+                    document.getElementById('itemType').value = item.itemType;
+                    document.getElementById('itemPrice').value = item.price;
+                    document.getElementById('itemStock').value = item.stockQuantity;
+                    document.getElementById('itemUnit').value = item.unit || 'phần';
+                    document.getElementById('itemImage').value = item.imageUrl || '';
+                }
+            }
+            modal.style.display = 'flex';
+        }
+
+        async function handleItemSubmit(e) {
+            e.preventDefault();
+            const token = localStorage.getItem('admin_token');
+            const data = {
+                name: document.getElementById('itemName').value,
+                itemType: document.getElementById('itemType').value,
+                price: parseInt(document.getElementById('itemPrice').value),
+                stockQuantity: parseInt(document.getElementById('itemStock').value),
+                unit: document.getElementById('itemUnit').value,
+                imageUrl: document.getElementById('itemImage').value
+            };
+            
+            const url = editingItemId ? `/api/admin/items/${editingItemId}` : '/api/admin/items';
+            const method = editingItemId ? 'PUT' : 'POST';
+            
+            const res = await fetch(url, {
+                method: method,
+                headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
+                body: JSON.stringify(data)
+            });
+            if (res.ok) {
+                alert("Thành công!");
+                document.getElementById('item-modal').style.display = 'none';
+                loadItems();
+            }
+        }
+
+        async function deleteItem(id) {
+            if (confirm("Xóa sản phẩm này?")) {
+                const token = localStorage.getItem('admin_token');
+                const res = await fetch(`/api/admin/items/${id}`, {
+                    method: 'DELETE',
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+                if (res.ok) loadItems();
+                else alert("Không thể xóa sản phẩm đang dùng trong Combo");
+            }
+        }
+
+        // ================= COMBO MODAL LOGIC =================
+        let editingComboId = null;
+        let allItems = [];
+
+        async function showComboModal(id = null) {
+            editingComboId = id;
+            const modal = document.getElementById('combo-modal');
+            const form = document.getElementById('combo-form');
+            const itemsContainer = document.getElementById('combo-items-selection');
+            const title = document.getElementById('modal-combo-title');
+            
+            form.reset();
+            itemsContainer.innerHTML = '<div class="text-center p-3"><i class="fa-solid fa-spinner fa-spin"></i> Đang tải danh sách món...</div>';
+            modal.style.display = 'flex';
+
+            // 1. Load all items if not loaded
+            if (allItems.length === 0) {
+                const res = await fetch('/api/admin/items', {
+                    headers: { 'Authorization': `Bearer ${localStorage.getItem('admin_token')}` }
+                });
+                const result = await res.json();
+                allItems = result.data || [];
+            }
+
+            // 2. Fetch current combo data if editing
+            let currentComboItems = [];
+            if (id) {
+                title.innerText = 'Cập nhật Combo';
+                const token = localStorage.getItem('admin_token');
+                const res = await fetch(`/api/admin/combos`, { headers: { 'Authorization': `Bearer ${token}` } });
+                const result = await res.json();
+                const combo = result.data.find(x => x.comboId == id);
+                if (combo) {
+                    document.getElementById('comboName').value = combo.name;
+                    document.getElementById('comboPrice').value = combo.price;
+                    document.getElementById('comboDesc').value = combo.description || '';
+                    document.getElementById('comboImage').value = combo.imageUrl || '';
+                    currentComboItems = combo.items || [];
+                }
+            } else {
+                title.innerText = 'Thêm Combo Mới';
+            }
+
+            // 3. Render items list with checkboxes
+            itemsContainer.innerHTML = '';
+            allItems.forEach(item => {
+                const existing = currentComboItems.find(ci => ci.item_id == item.itemId);
+                const isChecked = existing ? 'checked' : '';
+                const qty = existing ? existing.quantity : 1;
+                
+                itemsContainer.innerHTML += `
+                    <div class="combo-item-row" onclick="toggleComboItemSelect(this)" style="display:flex; align-items:center; gap:12px; padding:10px; border-bottom:1px solid rgba(255,255,255,0.05); cursor:pointer; transition: 0.2s;">
+                        <div class="custom-checkbox ${isChecked ? 'checked' : ''}" style="width:20px; height:20px; border:2px solid var(--color-primary); border-radius:4px; display:flex; align-items:center; justify-content:center; flex-shrink:0;">
+                            <i class="fa-solid fa-check" style="font-size:12px; color:#fff; display:${isChecked ? 'block' : 'none'};"></i>
+                            <input type="checkbox" value="${item.itemId}" ${isChecked} class="item-checkbox" style="display:none;">
+                        </div>
+                        <div style="flex:1">
+                            <div style="font-weight:600; font-size:0.9rem; color:#fff;">${item.name}</div>
+                            <div style="font-size:0.75rem; color:var(--text-muted);">${new Intl.NumberFormat('vi-VN').format(item.price)}₫</div>
+                        </div>
+                        <div onclick="event.stopPropagation()" style="display:flex; align-items:center; background:rgba(0,0,0,0.3); border-radius:4px; border:1px solid var(--glass-border); overflow:hidden;">
+                             <input type="number" value="${qty}" min="1" class="item-qty" style="width:45px; background:transparent; border:none; color:#fff; padding:4px 8px; font-size:0.85rem; text-align:center;" ${isChecked ? '' : 'disabled'}>
+                        </div>
+                    </div>
+                `;
+            });
+        }
+
+        function toggleComboItemSelect(row) {
+            const cb = row.querySelector('.item-checkbox');
+            const qtyInput = row.querySelector('.item-qty');
+            const icon = row.querySelector('.fa-check');
+            const box = row.querySelector('.custom-checkbox');
+            
+            cb.checked = !cb.checked;
+            qtyInput.disabled = !cb.checked;
+            
+            if (cb.checked) {
+                icon.style.display = 'block';
+                box.classList.add('checked');
+                box.style.background = 'var(--color-primary)';
+                row.style.background = 'rgba(255, 46, 59, 0.05)';
+            } else {
+                icon.style.display = 'none';
+                box.classList.remove('checked');
+                box.style.background = 'transparent';
+                row.style.background = 'transparent';
+            }
+        }
+
+        async function handleComboSubmit(e) {
+            e.preventDefault();
+            const token = localStorage.getItem('admin_token');
+            const selectedItems = [];
+            
+            document.querySelectorAll('.combo-item-row').forEach(row => {
+                const cb = row.querySelector('.item-checkbox');
+                if (cb.checked) {
+                    selectedItems.push({
+                        itemId: parseInt(cb.value),
+                        quantity: parseInt(row.querySelector('.item-qty').value)
+                    });
+                }
+            });
+
+            if (selectedItems.length === 0) {
+                alert("Vui lòng chọn ít nhất 1 món thành phần cho combo!");
+                return;
+            }
+
+            const data = {
+                name: document.getElementById('comboName').value,
+                price: parseInt(document.getElementById('comboPrice').value),
+                description: document.getElementById('comboDesc').value,
+                imageUrl: document.getElementById('comboImage').value,
+                items: selectedItems
+            };
+
+            const url = editingComboId ? `/api/admin/combos/${editingComboId}` : '/api/admin/combos';
+            const method = editingComboId ? 'PUT' : 'POST';
+
+            try {
+                const res = await fetch(url, {
+                    method: method,
+                    headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
+                    body: JSON.stringify(data)
+                });
+                if (res.ok) {
+                    alert("Lưu combo thành công!");
+                    document.getElementById('combo-modal').style.display = 'none';
+                    loadCombos();
+                } else {
+                    const err = await res.json();
+                    alert("Lỗi: " + err.message);
+                }
+            } catch (err) {
+                alert("Lỗi kết nối: " + err.message);
+            }
+        }
+
+        async function deleteCombo(id) {
+            if (confirm("Xóa combo này?")) {
+                const token = localStorage.getItem('admin_token');
+                await fetch(`/api/admin/combos/${id}`, {
+                    method: 'DELETE',
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+                loadCombos();
+            }
+        }
+    </script>
+}
+
+<!-- 📦 MODAL ITEM (vẫn giữ nguyên như turn trước) -->
+<div id="item-modal" class="admin-modal-backdrop" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.8); z-index:9999; justify-content:center; align-items:center;">
+    <div class="modal-card" style="width: 450px; background: #1a1a1e; border: 1px solid var(--glass-border); border-radius: 12px; padding: 24px;">
+        <div class="modal-header" style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px;">
+            <h3 style="margin:0; color:var(--color-primary);">Quản lý Sản phẩm lẻ</h3>
+            <button onclick="this.closest('.admin-modal-backdrop').style.display='none'" style="background:none; border:none; color:#fff; font-size:24px; cursor:pointer;">&times;</button>
+        </div>
+        <form id="item-form" onsubmit="handleItemSubmit(event)">
+            <div class="form-group mb-3">
+                <label class="form-label">Tên Sản Phẩm</label>
+                <input type="text" id="itemName" class="form-input" required>
+            </div>
+            <div class="form-group mb-3">
+                <label class="form-label">Loại Sản Phẩm</label>
+                <select id="itemType" class="form-input">
+                    <option value="food">Đồ ăn (Bắp/Snack)</option>
+                    <option value="drink">Nước uống</option>
+                    <option value="accessory">Phụ kiện/Quà tặng</option>
+                </select>
+            </div>
+            <div style="display:flex; gap:15px;" class="mb-3">
+                <div class="form-group" style="flex:1">
+                    <label class="form-label">Đơn Giá (đ)</label>
+                    <input type="number" id="itemPrice" class="form-input" required>
+                </div>
+                <div class="form-group" style="flex:1">
+                    <label class="form-label">Số lượng tồn</label>
+                    <input type="number" id="itemStock" class="form-input" value="100">
+                </div>
+            </div>
+            <div class="form-group mb-4">
+                <label class="form-label">Đường dẫn Ảnh (URL)</label>
+                <input type="text" id="itemImage" class="form-input" placeholder="https://...">
+            </div>
+            <input type="hidden" id="itemUnit" value="phần">
+            <div style="display:flex; gap:10px; justify-content:flex-end;">
+                <button type="submit" class="btn btn-primary">Lưu Sản Phẩm</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- 📦 MODAL COMBO (UPGRADED) -->
+<div id="combo-modal" class="admin-modal-backdrop" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.8); z-index:9999; justify-content:center; align-items:center;">
+    <div class="modal-card" style="width: 550px; background: #1a1a1e; border: 1px solid var(--glass-border); border-radius: 12px; padding: 24px;">
+        <div class="modal-header" style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px;">
+            <h3 id="modal-combo-title" style="margin:0; color:var(--color-primary);">Quản lý Combo</h3>
+            <button onclick="this.closest('.admin-modal-backdrop').style.display='none'" style="background:none; border:none; color:#fff; font-size:24px; cursor:pointer;">&times;</button>
+        </div>
+        <form id="combo-form" onsubmit="handleComboSubmit(event)">
+            <div style="display:grid; grid-template-columns: 1.5fr 1fr; gap:20px;">
+                <!-- Left column: Info -->
+                <div>
+                    <div class="form-group mb-3">
+                        <label class="form-label">Tên Gói Combo</label>
+                        <input type="text" id="comboName" class="form-input" placeholder="Ví dụ: Combo Friend" required>
+                    </div>
+                    <div class="form-group mb-3">
+                        <label class="form-label">Giá Combo (đ)</label>
+                        <input type="number" id="comboPrice" class="form-input" required>
+                    </div>
+                    <div class="form-group mb-3">
+                        <label class="form-label">Mô tả ngắn</label>
+                        <textarea id="comboDesc" class="form-input" style="height:60px; resize:none;"></textarea>
+                    </div>
+                    <div class="form-group mb-3">
+                        <label class="form-label">Ảnh Combo (URL)</label>
+                        <input type="text" id="comboImage" class="form-input" placeholder="https://...">
+                    </div>
+                </div>
+                <!-- Right column: Items selection -->
+                <div style="display:flex; flex-direction:column;">
+                    <label class="form-label">Chọn món thành phần</label>
+                    <div id="combo-items-selection" style="flex:1; background:rgba(0,0,0,0.2); border-radius:8px; border:1px solid var(--glass-border); overflow-y:auto; max-height:280px;">
+                        <!-- JS renders items here -->
+                    </div>
+                </div>
+            </div>
+            
+            <div style="display:flex; gap:10px; justify-content:flex-end; margin-top:20px;">
+                <button type="button" class="btn btn-outline" onclick="document.getElementById('combo-modal').style.display='none'">Hủy</button>
+                <button type="submit" class="btn btn-primary">Lưu Gói Combo</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<style>
+    .admin-modal-backdrop { backdrop-filter: blur(8px); }
+    .status-pills { padding: 4px 10px; border-radius: 20px; font-size: 0.75rem; font-weight: 600; text-transform: uppercase; }
+    .status-active { background: rgba(46, 213, 115, 0.15); color: #2ed573; border: 1px solid rgba(46, 213, 115, 0.3); }
+    .status-inactive { background: rgba(255, 71, 87, 0.15); color: #ff4757; border: 1px solid rgba(255, 71, 87, 0.3); }
+</style>

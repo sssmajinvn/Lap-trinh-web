@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>@ViewData["Title"] - Ticket Cinema Admin Panel</title>
+    
+    <!-- Google Fonts Outfit -->
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    
+    <!-- FontAwesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <!-- Design System CSS and Admin Specific CSS -->
+    <link rel="stylesheet" href="/css/design-system.css">
+    <link rel="stylesheet" href="/css/admin-dashboard.css">
+    
+    @RenderSection("Styles", required: false)
+</head>
+<body class="admin-body">
+
+    <!-- Security Check Script (Runs before rendering to prevent flash of unauthorized content) -->
+    <script>
+        (function() {
+            const token = localStorage.getItem('admin_token');
+            const currentPath = window.location.pathname.toLowerCase();
+            
+            if (!token && !currentPath.includes('/admin/login')) {
+                window.location.replace('/Admin/Login');
+            }
+        })();
+    </script>
+
+    <!-- 🌌 Admin Wrapper -->
+    <div class="admin-wrapper">
+        
+        <!-- 🧭 Sidebar Navigation -->
+        <aside class="admin-sidebar">
+            <div class="sidebar-brand">
+                <i class="fa-solid fa-gauge-high"></i> TICKET<span>ADMIN</span>
+            </div>
+            
+            <nav class="sidebar-menu">
+                <a href="/Admin/Dashboard" class="sidebar-link" id="side-dashboard">
+                    <i class="fa-solid fa-chart-pie"></i> Tổng Quan
+                </a>
+                <a href="/Admin/Movies" class="sidebar-link" id="side-movies">
+                    <i class="fa-solid fa-film"></i> Quản Lý Phim
+                </a>
+                <a href="/Admin/Showtimes" class="sidebar-link" id="side-showtimes">
+                    <i class="fa-solid fa-calendar-days"></i> Lịch Chiếu
+                </a>
+                <a href="/Admin/Concessions" class="sidebar-link" id="side-concessions">
+                    <i class="fa-solid fa-popcorn"></i> Bắp Nước & Combo
+                </a>
+                <a href="/Admin/Vouchers" class="sidebar-link" id="side-vouchers">
+                    <i class="fa-solid fa-ticket-simple"></i> Voucher & KM
+                </a>
+                <a href="/Admin/Users" class="sidebar-link" id="side-users">
+                    <i class="fa-solid fa-users-gear"></i> Người Dùng
+                </a>
+                <a href="/Admin/Theaters" class="sidebar-link" id="side-theaters">
+                    <i class="fa-solid fa-shop"></i> Rạp & Phòng
+                </a>
+                <div class="sidebar-divider"></div>
+                <a href="/" class="sidebar-link">
+                    <i class="fa-solid fa-globe"></i> Xem Trang Chủ
+                </a>
+                <a href="#" class="sidebar-link logout-btn" onclick="adminLogout(event)">
+                    <i class="fa-solid fa-right-from-bracket"></i> Đăng Xuất
+                </a>
+            </nav>
+            
+            <div class="sidebar-footer">
+                <p>Nhóm 7 - TicketBooking</p>
+                <span>v1.0.0 (net8.0)</span>
+            </div>
+        </aside>
+
+        <!-- 🌌 Main Content Area -->
+        <div class="admin-main">
+            <!-- Topbar Header -->
+            <header class="admin-topbar">
+                <div class="topbar-left">
+                    <button class="sidebar-toggle-btn" id="sidebar-toggle" onclick="toggleSidebar()">
+                        <i class="fa-solid fa-bars"></i>
+                    </button>
+                    <h2 class="page-title">@ViewData["Title"]</h2>
+                </div>
+                <div class="topbar-right">
+                    <div class="admin-profile">
+                        <div class="admin-avatar">
+                            <i class="fa-solid fa-user-shield"></i>
+                        </div>
+                        <div class="admin-info-text">
+                            <span class="admin-name" id="topbar-admin-name">Quản Trị Viên</span>
+                            <span class="admin-role" id="topbar-admin-role">Admin</span>
+                        </div>
+                    </div>
+                </div>
+            </header>
+
+            <!-- Content Body -->
+            <main class="admin-content">
+                @RenderBody()
+            </main>
+        </div>
+    </div>
+
+    <!-- Core Admin Javascript -->
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // Set active class on sidebar links based on URL
+            const currentPath = window.location.pathname.toLowerCase();
+            const links = {
+                '/admin/dashboard': 'side-dashboard',
+                '/admin': 'side-dashboard',
+                '/admin/movies': 'side-movies',
+                '/admin/showtimes': 'side-showtimes',
+                '/admin/concessions': 'side-concessions',
+                '/admin/vouchers': 'side-vouchers',
+                '/admin/users': 'side-users',
+                '/admin/theaters': 'side-theaters'
+            };
+
+            for (const path in links) {
+                if (currentPath === path || (path === '/admin' && currentPath === '/admin/')) {
+                    const el = document.getElementById(links[path]);
+                    if (el) el.classList.add('active');
+                }
+            }
+
+            // Load staff profile info from localStorage
+            const staffJson = localStorage.getItem('admin_staff');
+            if (staffJson) {
+                try {
+                    const staff = JSON.parse(staffJson);
+                    document.getElementById('topbar-admin-name').textContent = staff.hoTen || staff.email;
+                    document.getElementById('topbar-admin-role').textContent = staff.vaiTro || "Admin";
+                } catch (e) {
+                    console.error("Error parsing staff profile:", e);
+                }
+            }
+        });
+
+        function toggleSidebar() {
+            const body = document.body;
+            body.classList.toggle('sidebar-collapsed');
+        }
+
+        function adminLogout(e) {
+            e.preventDefault();
+            if (confirm("Bạn có chắc chắn muốn đăng xuất khỏi trang quản trị?")) {
+                localStorage.removeItem('admin_token');
+                localStorage.removeItem('admin_staff');
+                window.location.href = '/Admin/Login';
+            }
+        }
+    </script>
+
+    @RenderSection("Scripts", required: false)
+</body>
+</html>
