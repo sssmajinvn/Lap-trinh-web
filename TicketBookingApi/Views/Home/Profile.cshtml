@@ -2,213 +2,140 @@
     ViewData["Title"] = "Hồ Sơ Cá Nhân";
 }
 
-<div class="container py-5" style="margin-top: 80px;">
-    <div class="row">
-        <!-- 👤 Left Sidebar: User Summary -->
-        <div class="col-lg-4 mb-4">
-            <div class="glass-card text-center p-4 h-100">
-                <div class="profile-avatar-wrapper mb-3">
-                    <img id="user-avatar" src="/img/default-avatar.png" alt="Avatar" class="profile-avatar">
-                    <button class="avatar-edit-btn" onclick="alert('Tính năng đổi ảnh đang phát triển')">
-                        <i class="fa-solid fa-camera"></i>
+@await Html.PartialAsync("_AccountBanner")
+
+<div class="container account-page">
+    <div class="account-layout">
+        <!-- Nội dung chính -->
+        <div class="account-main">
+            <div class="tab-container account-tabs">
+                <div class="tab-header">
+                    <button class="tab-btn active" id="tab-info-btn" onclick="switchAccountTab('info')">
+                        <i class="fa-solid fa-id-card"></i> Thông tin tài khoản
                     </button>
-                </div>
-                <h3 id="user-fullname" class="mb-1 text-white">Đang tải...</h3>
-                <p id="user-email" class="text-muted mb-3"></p>
-                
-                <div class="user-stats d-flex justify-content-center gap-3 mb-4">
-                    <div class="stat-item">
-                        <span class="stat-label">Hạng</span>
-                        <span id="user-rank" class="stat-value text-accent">---</span>
-                    </div>
-                    <div class="divider-v"></div>
-                    <div class="stat-item">
-                        <span class="stat-label">Tổng chi</span>
-                        <span id="user-total-spent" class="stat-value">0₫</span>
-                    </div>
+                    <button class="tab-btn" id="tab-history-btn" onclick="switchAccountTab('history')">
+                        <i class="fa-solid fa-ticket"></i> Lịch sử đặt vé
+                    </button>
                 </div>
 
-                <div class="nav flex-column nav-pills profile-nav" id="v-pills-tab" role="tablist">
-                    <button class="nav-link active" id="tab-info-btn" data-bs-toggle="pill" data-bs-target="#v-pills-info" type="button" role="tab">
-                        <i class="fa-solid fa-user-pen me-2"></i> Thông Tin Tài Khoản
-                    </button>
-                    <button class="nav-link" id="tab-history-btn" data-bs-toggle="pill" data-bs-target="#v-pills-history" type="button" role="tab" onclick="loadBookingHistory()">
-                        <i class="fa-solid fa-clock-rotate-left me-2"></i> Lịch Sử Đặt Vé
-                    </button>
-                    <button class="nav-link text-danger" onclick="logout()">
-                        <i class="fa-solid fa-right-from-bracket me-2"></i> Đăng Xuất
-                    </button>
-                </div>
-            </div>
-        </div>
-
-        <!-- 📝 Right Content: Tab Panes -->
-        <div class="col-lg-8">
-            <div class="tab-content h-100" id="v-pills-tabContent">
-                
-                <!-- 🛠 Tab 1: Account Info -->
-                <div class="tab-pane fade show active" id="v-pills-info" role="tabpanel">
-                    <div class="glass-card p-4">
-                        <h4 class="mb-4 text-white"><i class="fa-solid fa-id-card text-primary me-2"></i> Chi Tiết Hồ Sơ</h4>
-                        <form id="profile-form">
-                            <div class="row g-3">
-                                <div class="col-md-6">
-                                    <label class="form-label text-muted">Họ và Tên</label>
-                                    <input type="text" id="input-fullname" class="form-control bg-dark border-secondary text-white" required>
-                                </div>
-                                <div class="col-md-6">
-                                    <label class="form-label text-muted">Số diện thoại</label>
-                                    <input type="text" id="input-phone" class="form-control bg-dark border-secondary text-white">
-                                </div>
-                                <div class="col-md-12">
-                                    <label class="form-label text-muted">Email</label>
-                                    <input type="email" id="input-email" class="form-control bg-dark border-secondary text-white" readonly>
-                                    <small class="text-muted">Email không thể thay đổi để đảm bảo bảo mật định danh.</small>
-                                </div>
-                                <div class="col-md-6">
-                                    <label class="form-label text-muted">Ngày sinh</label>
-                                    <input type="date" id="input-dob" class="form-control bg-dark border-secondary text-white">
-                                </div>
-                                <div class="col-md-6">
-                                    <label class="form-label text-muted">Giới tính</label>
-                                    <select id="input-gender" class="form-control bg-dark border-secondary text-white">
-                                        <option value="1">Nam</option>
-                                        <option value="0">Nữ</option>
-                                        <option value="2">Khác</option>
-                                    </select>
-                                </div>
-                                <div class="col-12 mt-4">
-                                    <button type="submit" class="btn btn-primary px-4 py-2">
-                                        <i class="fa-solid fa-floppy-disk me-2"></i> Lưu Thay Đổi
-                                    </button>
-                                </div>
+                <!-- Tab thông tin -->
+                <div id="tab-info" class="tab-pane active account-panel">
+                    <h3 class="account-panel-title"><i class="fa-solid fa-user-pen text-primary"></i> Chi tiết hồ sơ</h3>
+                    <form id="profile-form">
+                        <div class="form-grid-2">
+                            <div class="form-group">
+                                <label class="form-label">Họ và tên</label>
+                                <input type="text" id="input-fullname" class="form-input" required>
                             </div>
-                        </form>
-
-                        <hr class="my-5 border-secondary">
-
-                        <h4 class="mb-4 text-white"><i class="fa-solid fa-shield-halved text-success me-2"></i> Bảo Mật</h4>
-                        <button class="btn btn-outline-light mb-3" onclick="showChangePasswordModal()">
-                            <i class="fa-solid fa-key me-2"></i> Đổi Mật Khẩu
-                        </button>
-                        <p class="small text-muted mb-0">Lưu ý: Nếu bạn đăng nhập bằng Google, bạn không cần đổi mật khẩu tại đây.</p>
-                    </div>
-                </div>
-
-                <!-- 🍿 Tab 2: Booking History -->
-                <div class="tab-pane fade" id="v-pills-history" role="tabpanel">
-                    <div class="glass-card p-4">
-                        <div class="d-flex justify-content-between align-items-center mb-4">
-                            <h4 class="text-white m-0"><i class="fa-solid fa-ticket text-warning me-2"></i> Vé Đã Đặt</h4>
-                            <div class="history-filter">
-                                <select class="form-select form-select-sm bg-dark text-white border-secondary" style="width: 150px;" onchange="loadBookingHistory(this.value)">
-                                    <option value="">Tất cả</option>
-                                    <option value="paid">Đã thanh toán</option>
-                                    <option value="pending">Chờ thanh toán</option>
-                                    <option value="cancelled">Đã hủy</option>
+                            <div class="form-group">
+                                <label class="form-label">Số điện thoại</label>
+                                <input type="text" id="input-phone" class="form-input">
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label">Email</label>
+                                <input type="email" id="input-email" class="form-input" readonly>
+                                <small style="color:var(--text-muted);font-size:0.8rem;">Email không thể thay đổi (trừ tài khoản thường qua API).</small>
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label">Ngày sinh</label>
+                                <input type="date" id="input-dob" class="form-input">
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label">Giới tính</label>
+                                <select id="input-gender" class="form-select">
+                                    <option value="1">Nam</option>
+                                    <option value="0">Nữ</option>
+                                    <option value="2">Khác</option>
                                 </select>
                             </div>
-                        </div>
-
-                        <div id="history-container">
-                            <!-- Items rendered by JS -->
-                            <div class="text-center p-5">
-                                <i class="fa-solid fa-spinner fa-spin fa-2x"></i>
-                                <p class="mt-3">Đang tải lịch sử...</p>
+                            <div class="form-group">
+                                <label class="form-label">Hạng thành viên</label>
+                                <input type="text" id="input-rank" class="form-input" readonly>
                             </div>
+                        </div>
+                        <div style="margin-top: var(--space-lg); display:flex; gap:12px; flex-wrap:wrap;">
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fa-solid fa-floppy-disk"></i> Lưu thay đổi
+                            </button>
+                            <a href="/Home/ChangePassword" class="btn btn-secondary">
+                                <i class="fa-solid fa-key"></i> Đổi mật khẩu
+                            </a>
+                        </div>
+                    </form>
+                </div>
+
+                <!-- Tab lịch sử -->
+                <div id="tab-history" class="tab-pane account-panel">
+                    <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px; margin-bottom:var(--space-lg);">
+                        <h3 class="account-panel-title" style="margin:0;"><i class="fa-solid fa-ticket text-accent"></i> Vé đã đặt</h3>
+                        <select class="form-select" style="max-width:180px;" onchange="loadBookingHistory(this.value)">
+                            <option value="">Tất cả</option>
+                            <option value="paid">Đã thanh toán</option>
+                            <option value="pending">Chờ thanh toán</option>
+                            <option value="cancelled">Đã hủy</option>
+                        </select>
+                    </div>
+                    <div id="history-container">
+                        <div style="text-align:center;padding:3rem;color:var(--text-muted);">
+                            <i class="fa-solid fa-spinner fa-spin fa-2x"></i>
                         </div>
                     </div>
                 </div>
-
             </div>
         </div>
+
+        <!-- Sidebar thống kê -->
+        <aside class="account-sidebar">
+            <div class="account-stat-card">
+                <div class="account-stat-icon"><i class="fa-solid fa-crown"></i></div>
+                <div>
+                    <span class="account-stat-label">Hạng thành viên</span>
+                    <span id="sidebar-rank" class="account-stat-value">—</span>
+                </div>
+            </div>
+            <div class="account-stat-card">
+                <div class="account-stat-icon"><i class="fa-solid fa-wallet"></i></div>
+                <div>
+                    <span class="account-stat-label">Tổng chi tiêu</span>
+                    <span id="sidebar-spent" class="account-stat-value">0₫</span>
+                </div>
+            </div>
+            <div class="account-stat-card">
+                <div class="account-stat-icon"><i class="fa-solid fa-calendar-check"></i></div>
+                <div>
+                    <span class="account-stat-label">Ngày tham gia</span>
+                    <span id="sidebar-joined" class="account-stat-value">—</span>
+                </div>
+            </div>
+        </aside>
     </div>
 </div>
-
-<!-- 🔑 Change Password Modal -->
-<div class="modal fade" id="changePassModal" tabindex="-1">
-    <div class="modal-dialog modal-dialog-centered">
-        <div class="modal-content bg-dark border-secondary text-white shadow-lg">
-            <div class="modal-header border-secondary">
-                <h5 class="modal-title"><i class="fa-solid fa-key me-2"></i> Đổi mật khẩu</h5>
-                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
-            </div>
-            <div class="modal-body">
-                <form id="change-pass-form">
-                    <div class="mb-3">
-                        <label class="form-label text-muted small">Mật khẩu hiện tại</label>
-                        <input type="password" id="old-pass" class="form-control bg-black border-dark text-white" required>
-                    </div>
-                    <div class="mb-3">
-                        <label class="form-label text-muted small">Mật khẩu mới</label>
-                        <input type="password" id="new-pass" class="form-control bg-black border-dark text-white" required minlength="6">
-                    </div>
-                    <div class="mb-4">
-                        <label class="form-label text-muted small">Xác nhận mật khẩu mới</label>
-                        <input type="password" id="confirm-pass" class="form-control bg-black border-dark text-white" required>
-                    </div>
-                    <button type="submit" class="btn btn-primary w-100">Cập Nhật Mật Khẩu</button>
-                </form>
-            </div>
-        </div>
-    </div>
-</div>
-
-<style>
-    .glass-card {
-        background: rgba(255, 255, 255, 0.03);
-        backdrop-filter: blur(10px);
-        border: 1px solid rgba(255, 255, 255, 0.05);
-        border-radius: 16px;
-    }
-    .profile-avatar-wrapper { position: relative; width: 120px; height: 120px; margin: 0 auto; }
-    .profile-avatar { width: 100%; height: 100%; object-fit: cover; border-radius: 50%; border: 3px solid var(--color-primary); }
-    .avatar-edit-btn { 
-        position: absolute; bottom: 0; right: 0; width: 35px; height: 35px; border-radius: 50%; 
-        background: var(--color-primary); color: #fff; border: none; display: flex; align-items: center; justify-content: center;
-        box-shadow: 0 4px 10px rgba(0,0,0,0.3); transition: 0.2s;
-    }
-    .avatar-edit-btn:hover { transform: scale(1.1); }
-    
-    .profile-nav .nav-link { 
-        color: #ddd; text-align: left; padding: 12px 16px; border-radius: 10px; margin-bottom: 5px; transition: 0.3s;
-    }
-    .profile-nav .nav-link:hover { background: rgba(255, 46, 59, 0.05); color: var(--color-primary); }
-    .profile-nav .nav-link.active { background: var(--color-primary); color: #fff; box-shadow: 0 4px 15px rgba(255, 46, 59, 0.3); }
-
-    .stat-item { flex: 1; }
-    .stat-label { display: block; font-size: 0.75rem; color: #888; text-transform: uppercase; letter-spacing: 1px; }
-    .stat-value { font-weight: 700; font-size: 1.1rem; color: #fff; }
-    .divider-v { width: 1px; background: rgba(255,255,255,0.1); margin: 5px 0; }
-
-    .history-card { 
-        background: rgba(0,0,0,0.2); border: 1px solid rgba(255,255,255,0.05); border-radius: 12px; overflow: hidden; 
-        margin-bottom: 20px; transition: 0.3s;
-    }
-    .history-card:hover { border-color: rgba(255, 46, 59, 0.3); transform: translateX(5px); }
-    .history-poster { width: 80px; height: 120px; object-fit: cover; border-radius: 8px; }
-    .badge-status { font-size: 0.7rem; padding: 4px 10px; border-radius: 20px; font-weight: 600; text-transform: uppercase; }
-    .status-paid { background: rgba(46, 213, 115, 0.1); color: #2ed573; }
-    .status-pending { background: rgba(255, 159, 67, 0.1); color: #ff9f43; }
-    .status-cancelled { background: rgba(255, 71, 87, 0.1); color: #ff4757; }
-</style>
 
 @section Scripts {
     <script>
         const token = localStorage.getItem('jwt_token');
-        if (!token) {
-            window.location.href = '/'; // Guest cannot access profile
-        }
+        if (!token) window.location.href = '/';
 
         document.addEventListener('DOMContentLoaded', function() {
             loadUserProfile();
-            
-            // Check if we should open history tab (from navbar link)
-            if (localStorage.getItem('profile_tab') === 'history') {
-                localStorage.removeItem('profile_tab');
-                document.getElementById('tab-history-btn').click();
+            const params = new URLSearchParams(window.location.search);
+            if (params.get('tab') === 'history') {
+                switchAccountTab('history');
             }
         });
+
+        function switchAccountTab(tab) {
+            document.querySelectorAll('.account-tabs .tab-btn').forEach(b => b.classList.remove('active'));
+            document.querySelectorAll('.account-tabs .tab-pane').forEach(p => p.classList.remove('active'));
+            if (tab === 'history') {
+                document.getElementById('tab-history-btn').classList.add('active');
+                document.getElementById('tab-history').classList.add('active');
+                loadBookingHistory();
+            } else {
+                document.getElementById('tab-info-btn').classList.add('active');
+                document.getElementById('tab-info').classList.add('active');
+            }
+        }
 
         async function loadUserProfile() {
             try {
@@ -216,23 +143,20 @@
                     headers: { 'Authorization': `Bearer ${token}` }
                 });
                 const result = await res.json();
-                if (res.ok && result.status === 'success') {
-                    const u = result.data;
-                    
-                    // Update Summary
-                    document.getElementById('user-avatar').src = u.anhdaidien || '/img/default-avatar.png';
-                    document.getElementById('user-fullname').textContent = u.hoten;
-                    document.getElementById('user-email').textContent = u.email;
-                    document.getElementById('user-rank').textContent = u.hangThanhVien || 'Mới';
-                    document.getElementById('user-total-spent').textContent = new Intl.NumberFormat('vi-VN').format(u.tongChiTieu || 0) + '₫';
+                if (!res.ok || result.status !== 'success') return;
 
-                    // Fill Form
-                    document.getElementById('input-fullname').value = u.hoten;
-                    document.getElementById('input-email').value = u.email;
-                    document.getElementById('input-phone').value = u.sdt || '';
-                    document.getElementById('input-dob').value = u.ngaysinh ? u.ngaysinh.split('T')[0] : '';
-                    document.getElementById('input-gender').value = u.gioitinh !== undefined ? u.gioitinh : 1;
-                }
+                const u = result.data;
+                document.getElementById('input-fullname').value = u.hoten || '';
+                document.getElementById('input-email').value = u.email || '';
+                document.getElementById('input-phone').value = u.sdt || '';
+                document.getElementById('input-dob').value = u.ngaysinh ? u.ngaysinh.split('T')[0] : '';
+                document.getElementById('input-gender').value = u.gioitinh !== undefined && u.gioitinh !== null ? u.gioitinh : 1;
+                document.getElementById('input-rank').value = u.hangThanhVien || 'Mới';
+
+                document.getElementById('sidebar-rank').textContent = u.hangThanhVien || 'Mới';
+                document.getElementById('sidebar-spent').textContent = new Intl.NumberFormat('vi-VN').format(u.tongChiTieu || 0) + '₫';
+                document.getElementById('sidebar-joined').textContent = u.ngaytao
+                    ? new Date(u.ngaytao).toLocaleDateString('vi-VN') : '—';
             } catch (e) { console.error(e); }
         }
 
@@ -248,115 +172,85 @@
             try {
                 const res = await fetch('/api/users/profile', {
                     method: 'PUT',
-                    headers: { 
+                    headers: {
                         'Authorization': `Bearer ${token}`,
-                        'Content-Type': 'application/json' 
+                        'Content-Type': 'application/json'
                     },
                     body: JSON.stringify(data)
                 });
                 const r = await res.json();
                 if (res.ok) {
-                    alert("Cập nhật thành công!");
+                    alert('Cập nhật thông tin thành công!');
                     loadUserProfile();
+                    const userData = JSON.parse(localStorage.getItem('user_data') || '{}');
+                    userData.hoTen = data.hoTen;
+                    localStorage.setItem('user_data', JSON.stringify(userData));
                 } else {
-                    alert(r.message || "Có lỗi xảy ra");
+                    alert(r.message || 'Có lỗi xảy ra');
                 }
-            } catch (e) { alert("Lỗi kết nối"); }
+            } catch { alert('Lỗi kết nối máy chủ'); }
         });
 
         async function loadBookingHistory(status = '') {
             const container = document.getElementById('history-container');
-            container.innerHTML = '<div class="text-center p-5"><i class="fa-solid fa-spinner fa-spin fa-2x"></i></div>';
+            container.innerHTML = '<div style="text-align:center;padding:3rem;"><i class="fa-solid fa-spinner fa-spin fa-2x"></i></div>';
 
             try {
-                const url = `/api/users/booking-history?limit=20${status ? '&status='+status : ''}`;
-                const res = await fetch(url, {
-                    headers: { 'Authorization': `Bearer ${token}` }
-                });
+                const url = `/api/users/booking-history?limit=20${status ? '&status=' + status : ''}`;
+                const res = await fetch(url, { headers: { 'Authorization': `Bearer ${token}` } });
                 const result = await res.json();
-                
-                if (res.ok && result.status === 'success') {
-                    const history = result.data;
-                    if (history.length === 0) {
-                        container.innerHTML = '<div class="text-center p-5 text-muted">Bạn chưa có giao dịch nào.</div>';
-                        return;
-                    }
 
-                    container.innerHTML = history.map(item => `
-                        <div class="history-card p-3 d-flex gap-3 align-items-center">
-                            <img src="${item.posterUrl || '/img/placeholder.jpg'}" class="history-poster">
-                            <div class="flex-grow-1">
-                                <div class="d-flex justify-content-between mb-1">
-                                    <h5 class="text-white m-0">${item.tenPhim}</h5>
-                                    <span class="badge-status status-${item.trangThai}">${item.trangThai === 'paid' ? 'Đã thanh toán' : (item.trangThai === 'pending' ? 'Chờ thanh toán' : 'Đã hủy')}</span>
-                                </div>
-                                <p class="mb-1 small text-muted"><i class="fa-solid fa-location-dot me-1"></i> ${item.tenRapPhim} - ${item.tenPhong}</p>
-                                <p class="mb-1 small text-muted"><i class="fa-solid fa-calendar-day me-1"></i> ${item.ngayChieu} | <i class="fa-solid fa-clock me-1"></i> ${item.gioChieu}</p>
-                                <div class="mt-2 d-flex justify-content-between align-items-end">
-                                    <div>
-                                        <span class="text-accent fw-bold" style="font-size: 1.1rem;">${new Intl.NumberFormat('vi-VN').format(item.tongTien)}₫</span>
-                                        <span class="ms-2 small text-muted">(${item.tickets.length} vé)</span>
-                                    </div>
-                                    ${item.trangThai === 'paid' ? `<button class="btn btn-secondary btn-sm" onclick="window.location.href='/Home/Success?orderId=${item.maDonDatVe}'">Xem chi tiết & QR</button>` : ''}
-                                    ${item.trangThai === 'pending' ? `<button class="btn btn-outline-danger btn-sm" onclick="cancelOrder('${item.maDonDatVe}')">Hủy đơn</button>` : ''}
-                                </div>
+                if (!res.ok || result.status !== 'success') {
+                    container.innerHTML = '<p style="text-align:center;color:#ff4757;">Lỗi tải lịch sử.</p>';
+                    return;
+                }
+
+                const history = result.data;
+                if (!history.length) {
+                    container.innerHTML = '<div style="text-align:center;padding:3rem;color:var(--text-muted);"><i class="fa-solid fa-ticket fa-2x" style="opacity:0.4;margin-bottom:12px;"></i><p>Bạn chưa có giao dịch nào.</p></div>';
+                    return;
+                }
+
+                container.innerHTML = history.map(item => {
+                    const statusLabel = item.trangThai === 'paid' ? 'Đã thanh toán'
+                        : (item.trangThai === 'pending' ? 'Chờ thanh toán' : 'Đã hủy');
+                    const statusCls = item.trangThai === 'paid' ? 'showing'
+                        : (item.trangThai === 'pending' ? 'pending' : 'hidden');
+                    return `
+                    <div class="history-card">
+                        <img src="${item.posterUrl || 'https://images.unsplash.com/photo-1536440136628-849c177e76a1?w=200'}" class="history-poster" alt="">
+                        <div class="history-card-body">
+                            <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:8px;flex-wrap:wrap;">
+                                <h4 style="margin:0;font-size:1.05rem;">${item.tenPhim || 'Phim'}</h4>
+                                <span class="badge-status ${statusCls}">${statusLabel}</span>
+                            </div>
+                            <p style="font-size:0.85rem;color:var(--text-muted);margin:6px 0;"><i class="fa-solid fa-location-dot"></i> ${item.tenRapPhim || ''} · ${item.tenPhong || ''}</p>
+                            <p style="font-size:0.85rem;color:var(--text-muted);margin:0;"><i class="fa-solid fa-calendar"></i> ${item.ngayChieu || ''} · ${item.gioChieu || ''}</p>
+                            <div style="display:flex;justify-content:space-between;align-items:center;margin-top:12px;flex-wrap:wrap;gap:8px;">
+                                <span style="font-weight:700;color:var(--color-accent);">${new Intl.NumberFormat('vi-VN').format(item.tongTien)}₫ <small style="color:var(--text-muted);font-weight:400;">(${item.tickets.length} vé)</small></span>
+                                ${item.trangThai === 'paid' ? `<a href="/Home/Success?orderId=${item.maDonDatVe}" class="btn btn-secondary" style="padding:6px 14px;font-size:0.8rem;">Xem QR</a>` : ''}
+                                ${item.trangThai === 'pending' ? `<button class="btn btn-outline" style="padding:6px 14px;font-size:0.8rem;" onclick="cancelOrder('${item.maDonDatVe}')">Hủy đơn</button>` : ''}
                             </div>
                         </div>
-                    `).join('');
-                }
-            } catch (e) { container.innerHTML = 'Lỗi tải lịch sử.'; }
-        }
-
-        function showChangePasswordModal() {
-            new bootstrap.Modal(document.getElementById('changePassModal')).show();
-        }
-
-        document.getElementById('change-pass-form').addEventListener('submit', async (e) => {
-            e.preventDefault();
-            const oldPass = document.getElementById('old-pass').value;
-            const newPass = document.getElementById('new-pass').value;
-            const confirmPass = document.getElementById('confirm-pass').value;
-
-            if (newPass !== confirmPass) {
-                alert("Mật khẩu mới không khớp!");
-                return;
+                    </div>`;
+                }).join('');
+            } catch {
+                container.innerHTML = '<p style="text-align:center;color:#ff4757;">Lỗi kết nối.</p>';
             }
-
-            try {
-                const res = await fetch('/api/users/change-password', {
-                    method: 'PUT',
-                    headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ oldPassword: oldPass, newPassword: newPass })
-                });
-                if (res.ok) {
-                    alert("Đổi mật khẩu thành công!");
-                    bootstrap.Modal.getInstance(document.getElementById('changePassModal')).hide();
-                } else {
-                    const r = await res.json();
-                    alert(r.message || "Lỗi khi đổi mật khẩu");
-                }
-            } catch (e) { alert("Lỗi kết nối"); }
-        });
+        }
 
         async function cancelOrder(id) {
-            if (confirm("Bạn có chắc muốn hủy đơn hàng này không?")) {
-                const res = await fetch(`/api/bookings/${id}/cancel`, {
-                    method: 'POST',
-                    headers: { 'Authorization': `Bearer ${token}` }
-                });
-                if (res.ok) {
-                    alert("Đã hủy đơn hàng.");
-                    loadBookingHistory();
-                    loadUserProfile();
-                }
-            }
-        }
-
-        function logout() {
-            if (confirm("Bạn có muốn đăng xuất?")) {
-                localStorage.removeItem('jwt_token');
-                localStorage.removeItem('user_data');
-                window.location.href = '/';
+            if (!confirm('Bạn có chắc muốn hủy đơn hàng này?')) return;
+            const res = await fetch(`/api/bookings/${id}/cancel`, {
+                method: 'POST',
+                headers: { 'Authorization': `Bearer ${token}` }
+            });
+            if (res.ok) {
+                alert('Đã hủy đơn hàng.');
+                loadBookingHistory();
+                loadUserProfile();
+            } else {
+                alert('Không thể hủy đơn.');
             }
         }
     </script>

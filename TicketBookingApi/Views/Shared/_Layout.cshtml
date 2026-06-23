@@ -46,8 +46,9 @@
                         <i class="fa-solid fa-chevron-down" style="font-size: 0.8rem; color: var(--text-muted);"></i>
                         
                         <div class="profile-dropdown">
-                            <a href="/Home/Profile" class="dropdown-item"><i class="fa-solid fa-user"></i> Hồ sơ của tôi</a>
-                            <a href="/Home/Profile" class="dropdown-item" onclick="localStorage.setItem('profile_tab', 'history')"><i class="fa-solid fa-ticket"></i> Lịch sử đặt vé</a>
+                            <a href="/Home/Profile" class="dropdown-item"><i class="fa-solid fa-user"></i> Hồ sơ cá nhân</a>
+                            <a href="/Home/ChangePassword" class="dropdown-item"><i class="fa-solid fa-key"></i> Đổi mật khẩu</a>
+                            <a href="/Home/Profile?tab=history" class="dropdown-item"><i class="fa-solid fa-ticket"></i> Lịch sử đặt vé</a>
                             <div style="border-top: 1px solid var(--glass-border); margin: 4px 0;"></div>
                             <a href="#" class="dropdown-item" onclick="logout(event)"><i class="fa-solid fa-right-from-bracket"></i> Đăng xuất</a>
                         </div>

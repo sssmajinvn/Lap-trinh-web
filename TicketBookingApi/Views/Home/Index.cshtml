@@ -229,6 +229,10 @@
             }
         }
 
+        function goToMovieDetail(movieId) {
+            window.location.href = `/Home/Details/${movieId}`;
+        }
+
         function renderMoviesGrid(movies, containerEl, status) {
             containerEl.innerHTML = '';
             
@@ -273,7 +277,7 @@
                 }
 
                 const cardHtml = `
-                    <div class="movie-card">
+                    <div class="movie-card" onclick="goToMovieDetail('${movie.maphim}')" style="cursor:pointer;" title="Xem chi tiết phim">
                         <div class="movie-poster-wrapper">
                             <img src="${poster}" alt="${movie.tenphim}" class="movie-poster" loading="lazy">
                             <span class="movie-age-badge ${ageClass}">${ageBadge}</span>
@@ -287,7 +291,9 @@
                             <div class="movie-hashtags">
                                 ${genresHtml}
                             </div>
-                            ${actionBtnHtml}
+                            <div onclick="event.stopPropagation()">
+                                ${actionBtnHtml}
+                            </div>
                         </div>
                     </div>
                 `;

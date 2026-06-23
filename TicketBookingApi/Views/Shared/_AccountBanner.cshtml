@@ -1,0 +1,55 @@
+@{
+    var currentPath = Context.Request.Path.Value?.ToLower() ?? "";
+    var isProfile = currentPath.Contains("/home/profile");
+    var isPassword = currentPath.Contains("/home/changepassword");
+    var isHistory = isProfile && Context.Request.Query["tab"] == "history";
+}
+
+<section class="account-hero-banner" id="account-hero-banner">
+    <div class="container account-hero-inner">
+        <div class="account-hero-user">
+            <div class="account-avatar-frame">
+                <img src="" id="banner-user-avatar" alt="Avatar" class="account-avatar-img">
+            </div>
+            <div>
+                <p class="account-hero-label">Tài khoản của bạn</p>
+                <h2 id="banner-user-name" class="account-hero-name">Đang tải...</h2>
+                <p id="banner-user-email" class="account-hero-email"></p>
+            </div>
+        </div>
+        <div class="account-quick-links">
+            <a href="/Home/Profile" class="account-quick-card @(isProfile && !isHistory ? "active" : "")">
+                <i class="fa-solid fa-user-pen"></i>
+                <span>Hồ sơ cá nhân</span>
+            </a>
+            <a href="/Home/ChangePassword" class="account-quick-card @(isPassword ? "active" : "")">
+                <i class="fa-solid fa-key"></i>
+                <span>Đổi mật khẩu</span>
+            </a>
+            <a href="/Home/Profile?tab=history" class="account-quick-card @(isHistory ? "active" : "")">
+                <i class="fa-solid fa-clock-rotate-left"></i>
+                <span>Lịch sử đặt vé</span>
+            </a>
+        </div>
+    </div>
+</section>
+
+<script>
+    (function loadAccountBanner() {
+        const token = localStorage.getItem('jwt_token');
+        if (!token) return;
+        fetch('/api/users/profile', { headers: { 'Authorization': `Bearer ${token}` } })
+            .then(r => r.json())
+            .then(result => {
+                if (result.status !== 'success') return;
+                const u = result.data;
+                const avatarEl = document.getElementById('banner-user-avatar');
+                const nameEl = document.getElementById('banner-user-name');
+                const emailEl = document.getElementById('banner-user-email');
+                if (avatarEl) avatarEl.src = u.anhdaidien || `https://api.dicebear.com/7.x/adventurer/svg?seed=${u.mataikhoan}`;
+                if (nameEl) nameEl.textContent = u.hoten || u.mataikhoan;
+                if (emailEl) emailEl.textContent = u.email || '';
+            })
+            .catch(() => {});
+    })();
+</script>

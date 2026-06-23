@@ -1,0 +1,292 @@
+@{
+    Layout = "_AdminLayout";
+    ViewData["Title"] = "Quản Lý Đơn Đặt Vé";
+}
+
+<div class="data-card" style="margin-bottom: 2rem;">
+    <div class="card-header-actions">
+        <div>
+            <h3 class="card-title"><i class="fa-solid fa-receipt text-info"></i> Danh Sách Đơn Đặt Vé</h3>
+            <p style="font-size: 0.85rem; color: var(--text-muted); margin-top: 6px;">
+                Xem và cập nhật trạng thái thanh toán các đơn đặt vé của khách hàng.
+            </p>
+        </div>
+        <div id="bookings-summary" style="font-size: 0.85rem; color: var(--text-muted);"></div>
+    </div>
+
+    <div class="table-filter-bar">
+        <div class="filter-group">
+            <div class="search-input-wrapper">
+                <i class="fa-solid fa-magnifying-glass"></i>
+                <input type="text" id="booking-search" class="form-input" placeholder="Tìm mã đơn, tên khách, phim..." oninput="filterBookings()">
+            </div>
+            <select id="booking-status-filter" class="form-select" onchange="filterBookings()" style="max-width: 200px;">
+                <option value="">Tất cả trạng thái đơn</option>
+                <option value="paid">Đã thanh toán</option>
+                <option value="pending">Chờ thanh toán</option>
+                <option value="cancelled">Đã hủy</option>
+            </select>
+            <select id="payment-status-filter" class="form-select" onchange="filterBookings()" style="max-width: 200px;">
+                <option value="">Tất cả thanh toán</option>
+                <option value="success">Thành công</option>
+                <option value="pending">Đang chờ</option>
+                <option value="failed">Thất bại</option>
+                <option value="cancelled">Đã hủy</option>
+            </select>
+        </div>
+    </div>
+
+    <div class="admin-table-wrapper">
+        <table class="admin-table">
+            <thead>
+                <tr>
+                    <th>Mã Đơn</th>
+                    <th>Khách Hàng</th>
+                    <th>Phim &amp; Suất Chiếu</th>
+                    <th>Ghế</th>
+                    <th>Tổng Tiền</th>
+                    <th>Trạng Thái Đơn</th>
+                    <th>Thanh Toán</th>
+                    <th style="text-align: right;">Hành Động</th>
+                </tr>
+            </thead>
+            <tbody id="bookings-tbody">
+                <tr>
+                    <td colspan="8" style="text-align: center; color: var(--text-muted); padding: 2rem;">
+                        <i class="fa-solid fa-spinner fa-spin"></i> Đang tải danh sách đơn...
+                    </td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<!-- Modal cập nhật trạng thái thanh toán -->
+<div id="payment-status-modal" class="modal-backdrop" onclick="closeModalOnBackdrop(event, 'payment-status-modal')">
+    <div class="modal-card admin-modal-card">
+        <div class="modal-header">
+            <h3>Cập Nhật Trạng Thái Thanh Toán</h3>
+            <button class="modal-close-btn" onclick="closeModal('payment-status-modal')">&times;</button>
+        </div>
+        <div class="modal-body">
+            <p style="font-size: 0.9rem; color: var(--text-muted); margin-bottom: 1rem;">
+                Mã thanh toán: <strong id="modal-payment-id" style="color: var(--text-main);"></strong><br>
+                Mã đơn: <strong id="modal-order-id" style="color: var(--text-main);"></strong>
+            </p>
+            <div class="form-group">
+                <label>Trạng thái mới</label>
+                <select id="modal-payment-status" class="form-select">
+                    <option value="success">success — Thành công</option>
+                    <option value="pending">pending — Đang chờ</option>
+                    <option value="failed">failed — Thất bại</option>
+                    <option value="cancelled">cancelled — Đã hủy</option>
+                </select>
+            </div>
+            <div style="display: flex; gap: 10px; justify-content: flex-end; margin-top: 1.5rem;">
+                <button class="btn btn-secondary" onclick="closeModal('payment-status-modal')">Hủy</button>
+                <button class="btn btn-primary" id="btn-save-payment" onclick="savePaymentStatus()">
+                    <i class="fa-solid fa-floppy-disk"></i> Lưu
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        let allOrders = [];
+        let editingPaymentId = null;
+
+        document.addEventListener('DOMContentLoaded', loadBookings);
+
+        function closeModal(id) {
+            document.getElementById(id).classList.remove('show');
+            document.body.style.overflow = '';
+        }
+        function closeModalOnBackdrop(e, id) {
+            if (e.target.id === id) closeModal(id);
+        }
+        function openModal(id) {
+            document.getElementById(id).classList.add('show');
+            document.body.style.overflow = 'hidden';
+        }
+
+        async function loadBookings() {
+            const token = localStorage.getItem('admin_token');
+            const tbody = document.getElementById('bookings-tbody');
+            tbody.innerHTML = `<tr><td colspan="8" style="text-align:center;padding:2rem;color:var(--text-muted);"><i class="fa-solid fa-spinner fa-spin"></i> Đang tải...</td></tr>`;
+
+            try {
+                const res = await fetch('/api/admin/bookings', {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+                const result = await res.json();
+
+                if (!res.ok || result.status !== 'success') {
+                    throw new Error(result.message || 'Lỗi tải dữ liệu');
+                }
+
+                allOrders = groupBookings(result.data || []);
+                document.getElementById('bookings-summary').textContent = `${allOrders.length} đơn hàng`;
+                renderBookings(allOrders);
+            } catch (err) {
+                tbody.innerHTML = `<tr><td colspan="8" style="text-align:center;padding:2rem;color:#ff4757;">${err.message}</td></tr>`;
+            }
+        }
+
+        function groupBookings(rows) {
+            const map = new Map();
+            rows.forEach(r => {
+                if (!map.has(r.madondatve)) {
+                    map.set(r.madondatve, {
+                        madondatve: r.madondatve,
+                        ngaydatve: r.ngaydatve,
+                        tongtien: r.tongtien,
+                        trangthai_don: r.trangthai_don,
+                        hoten: r.hoten,
+                        email: r.email,
+                        sdt: r.sdt,
+                        tenphim: r.tenphim,
+                        tenrapphim: r.tenrapphim,
+                        tenphong: r.tenphong,
+                        ngaychieu: r.ngaychieu,
+                        giochieu: r.giochieu,
+                        mathanhtoan: r.mathanhtoan,
+                        phuongthucthanhtoan: r.phuongthucthanhtoan,
+                        trangthai_thanhtoan: r.trangthai_thanhtoan,
+                        seats: []
+                    });
+                }
+                const order = map.get(r.madondatve);
+                order.seats.push(`${r.mahangghe || ''}${r.soghe || ''}`);
+            });
+            return Array.from(map.values());
+        }
+
+        function renderBookings(orders) {
+            const tbody = document.getElementById('bookings-tbody');
+            if (!orders.length) {
+                tbody.innerHTML = `<tr><td colspan="8" style="text-align:center;padding:2rem;color:var(--text-muted);">Không có đơn đặt vé nào</td></tr>`;
+                return;
+            }
+
+            tbody.innerHTML = orders.map(o => {
+                const ngayDat = o.ngaydatve ? new Date(o.ngaydatve).toLocaleString('vi-VN') : '—';
+                const ngayChieu = o.ngaychieu ? new Date(o.ngaychieu).toLocaleDateString('vi-VN') : '—';
+                const gioChieu = o.giochieu ? new Date(o.giochieu).toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' }) : '—';
+                const seats = [...new Set(o.seats)].join(', ') || '—';
+                const paymentBadge = paymentStatusBadge(o.trangthai_thanhtoan);
+                const orderBadge = orderStatusBadge(o.trangthai_don);
+
+                const canEditPayment = o.mathanhtoan;
+                const editBtn = canEditPayment
+                    ? `<button class="btn btn-outline" style="padding:5px 10px;font-size:0.75rem;" onclick="openPaymentModal('${o.mathanhtoan}','${o.madondatve}','${o.trangthai_thanhtoan || ''}')"><i class="fa-solid fa-pen"></i> Sửa TT</button>`
+                    : `<span style="font-size:0.75rem;color:var(--text-muted);">Chưa có TT</span>`;
+
+                return `
+                <tr>
+                    <td>
+                        <div style="font-weight:600;font-size:0.85rem;">${o.madondatve.substring(0, 8)}...</div>
+                        <div style="font-size:0.75rem;color:var(--text-muted);">${ngayDat}</div>
+                    </td>
+                    <td>
+                        <div style="font-weight:600;">${o.hoten || '—'}</div>
+                        <div style="font-size:0.75rem;color:var(--text-muted);">${o.email || ''}</div>
+                        <div style="font-size:0.75rem;color:var(--text-muted);">${o.sdt || ''}</div>
+                    </td>
+                    <td>
+                        <div style="font-weight:600;">${o.tenphim || '—'}</div>
+                        <div style="font-size:0.75rem;color:var(--text-muted);">${o.tenrapphim || ''} · ${o.tenphong || ''}</div>
+                        <div style="font-size:0.75rem;color:var(--text-muted);">${ngayChieu} ${gioChieu}</div>
+                    </td>
+                    <td><span class="badge-status pending" style="font-size:0.75rem;">${seats}</span></td>
+                    <td style="font-weight:700;color:var(--color-accent);">${formatMoney(o.tongtien)}</td>
+                    <td>${orderBadge}</td>
+                    <td>
+                        ${paymentBadge}
+                        <div style="font-size:0.7rem;color:var(--text-muted);margin-top:4px;">${o.phuongthucthanhtoan || '—'}</div>
+                    </td>
+                    <td style="text-align:right;">${editBtn}</td>
+                </tr>`;
+            }).join('');
+        }
+
+        function orderStatusBadge(status) {
+            const map = {
+                paid: { cls: 'showing', label: 'Đã thanh toán' },
+                pending: { cls: 'pending', label: 'Chờ TT' },
+                cancelled: { cls: 'hidden', label: 'Đã hủy' }
+            };
+            const s = map[status] || { cls: 'pending', label: status || '—' };
+            return `<span class="badge-status ${s.cls}">${s.label}</span>`;
+        }
+
+        function paymentStatusBadge(status) {
+            const map = {
+                success: { cls: 'showing', label: 'Thành công' },
+                pending: { cls: 'pending', label: 'Đang chờ' },
+                failed: { cls: 'hidden', label: 'Thất bại' },
+                cancelled: { cls: 'hidden', label: 'Đã hủy' }
+            };
+            const s = map[status] || { cls: 'pending', label: status || 'Chưa có' };
+            return `<span class="badge-status ${s.cls}">${s.label}</span>`;
+        }
+
+        function formatMoney(n) {
+            return new Intl.NumberFormat('vi-VN').format(n || 0) + '₫';
+        }
+
+        function filterBookings() {
+            const q = document.getElementById('booking-search').value.toLowerCase().trim();
+            const orderStatus = document.getElementById('booking-status-filter').value;
+            const payStatus = document.getElementById('payment-status-filter').value;
+
+            const filtered = allOrders.filter(o => {
+                const matchQ = !q || [o.madondatve, o.hoten, o.email, o.tenphim, o.tenrapphim]
+                    .some(v => (v || '').toLowerCase().includes(q));
+                const matchOrder = !orderStatus || o.trangthai_don === orderStatus;
+                const matchPay = !payStatus || o.trangthai_thanhtoan === payStatus;
+                return matchQ && matchOrder && matchPay;
+            });
+            renderBookings(filtered);
+        }
+
+        function openPaymentModal(paymentId, orderId, currentStatus) {
+            editingPaymentId = paymentId;
+            document.getElementById('modal-payment-id').textContent = paymentId;
+            document.getElementById('modal-order-id').textContent = orderId;
+            document.getElementById('modal-payment-status').value = currentStatus || 'pending';
+            openModal('payment-status-modal');
+        }
+
+        async function savePaymentStatus() {
+            const token = localStorage.getItem('admin_token');
+            const status = document.getElementById('modal-payment-status').value;
+            const btn = document.getElementById('btn-save-payment');
+            btn.disabled = true;
+
+            try {
+                const res = await fetch(`/api/admin/payments/${editingPaymentId}/status`, {
+                    method: 'PUT',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${token}`
+                    },
+                    body: JSON.stringify({ trangthai: status })
+                });
+                const result = await res.json();
+
+                if (res.ok && result.status === 'success') {
+                    closeModal('payment-status-modal');
+                    loadBookings();
+                } else {
+                    alert(result.message || 'Cập nhật thất bại');
+                }
+            } catch {
+                alert('Lỗi kết nối máy chủ');
+            } finally {
+                btn.disabled = false;
+            }
+        }
+    </script>
+}

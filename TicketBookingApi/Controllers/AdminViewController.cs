@@ -69,6 +69,12 @@ namespace TicketBookingApi.Controllers
             return View();
         }
 
+        [HttpGet("Bookings")]
+        public IActionResult Bookings()
+        {
+            return View();
+        }
+
         // --- Custom endpoints to perform movie updates & deletes without modifying existing backend APIs ---
 
         [HttpPost("api/movies/update/{id}")]

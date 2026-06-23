@@ -98,8 +98,7 @@
               "RelativeToolTip": "Controllers\\Admin\\ConcessionAdminController.cs",
               "ViewState": "AgIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2026-06-23T11:16:49.085Z",
-              "EditorCaption": ""
+              "WhenOpened": "2026-06-23T11:16:49.085Z"
             },
             {
               "$type": "Document",
@@ -111,8 +110,7 @@
               "RelativeToolTip": "Controllers\\Admin\\CustomerAdminController.cs",
               "ViewState": "AgIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2026-06-23T11:16:47.959Z",
-              "EditorCaption": ""
+              "WhenOpened": "2026-06-23T11:16:47.959Z"
             },
             {
               "$type": "Document",
@@ -124,8 +122,7 @@
               "RelativeToolTip": "Controllers\\Admin\\VoucherAdminController.cs",
               "ViewState": "AgIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2026-06-23T11:16:31.725Z",
-              "EditorCaption": ""
+              "WhenOpened": "2026-06-23T11:16:31.725Z"
             },
             {
               "$type": "Document",
@@ -137,8 +134,7 @@
               "RelativeToolTip": "Controllers\\Admin\\UserAdminController.cs",
               "ViewState": "AgIAANIAAAAAAAAAAAAIwAAAAAAAAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2026-06-23T11:16:16.525Z",
-              "EditorCaption": ""
+              "WhenOpened": "2026-06-23T11:16:16.525Z"
             },
             {
               "$type": "Document",
@@ -150,8 +146,7 @@
               "RelativeToolTip": "Controllers\\AdminViewController.cs",
               "ViewState": "AgIAAB0AAAAAAAAAAAAgwAAAAAAAAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2026-06-23T11:10:49.981Z",
-              "EditorCaption": ""
+              "WhenOpened": "2026-06-23T11:10:49.981Z"
             },
             {
               "$type": "Document",
@@ -163,8 +158,7 @@
               "RelativeToolTip": "Controllers\\Admin\\TheaterAdminController.cs",
               "ViewState": "AgIAABsAAAAAAAAAAAAYwAAAAAAAAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2026-06-23T11:10:31.387Z",
-              "EditorCaption": ""
+              "WhenOpened": "2026-06-23T11:10:31.387Z"
             },
             {
               "$type": "Document",
@@ -176,8 +170,7 @@
               "RelativeToolTip": "Views\\AdminView\\Login.cshtml",
               "ViewState": "AgIAAAAAAAAAAAAAAAAAAAsAAAAeAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000759|",
-              "WhenOpened": "2026-06-22T19:06:25.251Z",
-              "EditorCaption": ""
+              "WhenOpened": "2026-06-22T19:06:25.251Z"
             },
             {
               "$type": "Document",
@@ -189,8 +182,7 @@
               "RelativeToolTip": "Controllers\\Admin\\AuthAdminController.cs",
               "ViewState": "AgIAAAAAAAAAAAAAAAAAABIAAABbAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2026-06-22T18:38:51.792Z",
-              "EditorCaption": ""
+              "WhenOpened": "2026-06-22T18:38:51.792Z"
             },
             {
               "$type": "Document",
@@ -202,8 +194,7 @@
               "RelativeToolTip": "Controllers\\Admin\\ShowtimeAdminController.cs",
               "ViewState": "AgIAAEMAAAAAAAAAAAAkwFUAAAAAAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2026-06-22T18:23:52.709Z",
-              "EditorCaption": ""
+              "WhenOpened": "2026-06-22T18:23:52.709Z"
             },
             {
               "$type": "Document",
@@ -215,8 +206,7 @@
               "RelativeToolTip": "Controllers\\BookingsController.cs",
               "ViewState": "AgIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2026-06-22T18:09:31.337Z",
-              "EditorCaption": ""
+              "WhenOpened": "2026-06-22T18:09:31.337Z"
             },
             {
               "$type": "Document",
@@ -240,8 +230,7 @@
               "RelativeToolTip": "Controllers\\AdminController.cs",
               "ViewState": "AgIAABsAAAAAAAAAAAAgwAAAAAAAAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2026-06-22T18:05:00.463Z",
-              "EditorCaption": ""
+              "WhenOpened": "2026-06-22T18:05:00.463Z"
             },
             {
               "$type": "Document",
@@ -277,8 +266,7 @@
               "RelativeToolTip": "Controllers\\Admin\\MovieAdminController.cs",
               "ViewState": "AgIAACoAAAAAAAAAAAAYwAAAAAAAAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2026-06-22T17:58:18.589Z",
-              "EditorCaption": ""
+              "WhenOpened": "2026-06-22T17:58:18.589Z"
             },
             {
               "$type": "Document",
@@ -288,7 +276,7 @@
               "RelativeDocumentMoniker": "Program.cs",
               "ToolTip": "D:\\LapTrinhWeb .NetCore\\Do an .net\\Lap-trinh-web\\TicketBookingApi\\Program.cs",
               "RelativeToolTip": "Program.cs",
-              "ViewState": "AgIAAKEAAAAAAAAAAAAmwK8AAAAKAAAAAAAAAA==",
+              "ViewState": "AgIAAJsAAAAAAAAAAAAmwK8AAAAKAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
               "WhenOpened": "2026-06-21T18:28:15.931Z",
               "EditorCaption": ""
@@ -327,8 +315,7 @@
               "RelativeToolTip": "Controllers\\MoviesController.cs",
               "ViewState": "AgIAAAAAAAAAAAAAAAAAACgAAAARAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2026-06-21T18:10:50.773Z",
-              "EditorCaption": ""
+              "WhenOpened": "2026-06-21T18:10:50.773Z"
             }
           ]
         }

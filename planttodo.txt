@@ -1,21 +1,23 @@
-chức năng admin đang bị lỗi các chức năng sau:
-Tổng quan (dashboard): chưa thống kê doanh thu tháng (gọi api [HttpGet("/api/admin/reports/monthly")])
-Quản lý phim: 
-- Chưa thêm được, chưa sửa được
-- Thêm một trang phụ khi bấm vào nút import TMDB, layout giống như trang quản lý phim.
-- Đọc file MovieAdminController.cs, TmdbService.cs để làm trang phụ, trang này sẽ hiển thị các phim trending trên TMDB và mục hành động chỉ có nút add để thêm phim vào database với trạng thái pending, lấy đầy đủ thông tin đạo diễn, diễn viên 
-Quản lý lịch chiếu: ShowtimeAdminController
-- chưa thêm được, chưa sửa được
-- tạo form thêm lịch chiếu gọi api [HttpPost] public async Task<IActionResult> Create([FromBody] ShowtimeDto dto)
-- form sửa vẽ giống form thêm [HttpPut("{id}")] public async Task<IActionResult> Update(string id, [FromBody] ShowtimeDto dto)
-Bắp nước và combo: xóa nút quay lại, copy giao diện thêm accessories (items) cho phần sửa gọi api [HttpPut("items/{id}")] public async Task<IActionResult> UpdateItem(int id, [FromBody] UpdateItemDto dto) trong ConcessionAdminController
+Bên admin:
+- làm thêm chức năng Quản lý đơn đặt vé trong custumerAdminController:
++ xem danh sách các đơn: call API  [HttpGet("bookings")] 
++ chính sửa trạng thái thanh toán các đơn:  [HttpPut("payments/{id}/status")]
++ thiết kế UI cho đồng bộ với các chức năng khác
+- thêm icon cho bắp nước & combo trong view admin bên cột hiển thị các danh sách chức năng 
+Bên user:
+- thêm event bấm vào phim thì sẽ chuyển đến trang chi tiết của phim đó
+- chỉnh lại khung ảnh giao diện, hiển thị rõ các chức năng gồm hồ sơ cá nhân, đổi mật khẩu và lịch sử đặt vé hiển thị trên banner
+- thiết kế lại phần hồ sơ cá nhân đọc API trong UsersController, gọi  [HttpPut("profile")] và hiển thị thông tin cơ bản
+- thiết kế trang đổi mật khẩu cơ bản, gọi API  [HttpPut("change-password")]
 
 ================================================================
-ĐÃ XỬ LÝ (23/06/2026):
-[x] Dashboard: thêm KPI "Doanh thu tháng này" gọi /api/admin/reports/monthly?format=json
-[x] API monthly hỗ trợ tham số format=json trả JSON thống kê (ngoài xuất Excel)
-[x] Quản lý phim: sửa PUT /api/admin/movies/{id}, trang /Admin/Movies/Tmdb (trending TMDB)
-[x] API GET /api/admin/movies/trending, POST import với trạng thái pending + đạo diễn/diễn viên
-[x] Lịch chiếu: form thêm/sửa gọi POST/PUT /api/admin/showtimes, form sửa giống form thêm
-[x] Bắp nước: xóa nút quay lại, form sửa item dùng PUT /api/admin/items/{id}
+ĐÃ XỬ LÝ:
+[x] Admin — Quản lý đơn đặt vé: trang /Admin/Bookings, GET /api/admin/bookings, PUT /api/admin/payments/{id}/status
+[x] Admin — Icon sidebar Bắp Nước & Combo: fa-mug-hot (thay fa-popcorn không có trong FA free)
+[x] Admin — Thêm menu sidebar "Đơn Đặt Vé"
+[x] User — Click thẻ phim (Index, Search) → /Home/Details/{id}
+[x] User — Banner tài khoản (_AccountBanner): hồ sơ, đổi MK, lịch sử vé
+[x] User — Redesign Profile: design-system, PUT /api/users/profile, tab lịch sử vé
+[x] User — Trang /Home/ChangePassword: PUT /api/users/change-password
+[x] User — Navbar dropdown: thêm link đổi mật khẩu, lịch sử vé
 ================================================================
