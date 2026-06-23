@@ -1,0 +1,195 @@
+@{
+    Layout = null;
+}
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Đăng Nhập Quản Trị | Ticket Cinema</title>
+    <!-- Google Fonts Outfit -->
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <!-- FontAwesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <link rel="stylesheet" href="/css/design-system.css">
+    
+    <style>
+        body {
+            font-family: 'Outfit', sans-serif;
+            background-color: #0b0f19;
+            color: #f5f6fa;
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: radial-gradient(circle at top right, rgba(0, 188, 212, 0.1), transparent),
+                        radial-gradient(circle at bottom left, rgba(229, 9, 20, 0.08), #080b11);
+        }
+        
+        .login-card {
+            width: 100%;
+            max-width: 420px;
+            background: rgba(22, 31, 48, 0.7);
+            backdrop-filter: blur(16px);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: 24px;
+            padding: 2.5rem;
+            box-shadow: 0 15px 40px rgba(0, 0, 0, 0.5);
+            text-align: center;
+        }
+
+        .login-logo {
+            font-size: 1.6rem;
+            font-weight: 800;
+            margin-bottom: 0.5rem;
+            letter-spacing: 1px;
+        }
+
+        .login-logo i {
+            color: var(--color-primary);
+            margin-right: 8px;
+        }
+
+        .login-logo span {
+            color: #00bcd4;
+        }
+
+        .login-subtitle {
+            color: var(--text-muted);
+            font-size: 0.9rem;
+            margin-bottom: 2rem;
+        }
+
+        .form-group {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            margin-bottom: 1.25rem;
+            text-align: left;
+        }
+
+        .form-group label {
+            font-size: 0.85rem;
+            font-weight: 600;
+            color: var(--text-muted);
+        }
+
+        .input-icon-wrapper {
+            position: relative;
+        }
+
+        .input-icon-wrapper i {
+            position: absolute;
+            left: 14px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: var(--text-muted);
+        }
+
+        .input-icon-wrapper input {
+            width: 100%;
+            padding-left: 40px;
+        }
+
+        .btn-login {
+            margin-top: 1.5rem;
+            height: 48px;
+            font-size: 1rem;
+        }
+
+        #login-error {
+            color: #ff4757;
+            font-size: 0.85rem;
+            margin-top: 1rem;
+            display: none;
+            background: rgba(255, 71, 87, 0.1);
+            border: 1px solid rgba(255, 71, 87, 0.2);
+            padding: 10px;
+            border-radius: 8px;
+            text-align: left;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="login-card">
+        <div class="login-logo">
+            <i class="fa-solid fa-user-gear"></i> TICKET<span>ADMIN</span>
+        </div>
+        <p class="login-subtitle">Đăng nhập vào hệ thống quản trị Ticket Cinema</p>
+
+        <form id="admin-login-form" onsubmit="handleAdminLogin(event)">
+            <div class="form-group">
+                <label for="email">Email quản trị</label>
+                <div class="input-icon-wrapper">
+                    <i class="fa-solid fa-envelope"></i>
+                    <input type="email" id="email" class="form-input" placeholder="admin@ticketcinema.vn" required>
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label for="password">Mật khẩu</label>
+                <div class="input-icon-wrapper">
+                    <i class="fa-solid fa-lock"></i>
+                    <input type="password" id="password" class="form-input" placeholder="••••••••" required>
+                </div>
+            </div>
+
+            <button type="submit" id="submit-btn" class="btn btn-primary btn-block btn-login">
+                ĐĂNG NHẬP <i class="fa-solid fa-right-to-bracket" style="margin-left: 8px;"></i>
+            </button>
+
+            <div id="login-error"></div>
+        </form>
+    </div>
+
+    <script>
+        // Check if already logged in as admin, redirect to Dashboard
+        if (localStorage.getItem('admin_token')) {
+            window.location.replace('/Admin/Dashboard');
+        }
+
+        async function handleAdminLogin(event) {
+            event.preventDefault();
+            const email = document.getElementById('email').value.trim();
+            const password = document.getElementById('password').value;
+            const errorDiv = document.getElementById('login-error');
+            const submitBtn = document.getElementById('submit-btn');
+
+            errorDiv.style.display = 'none';
+            submitBtn.disabled = true;
+            submitBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Đang đăng nhập...';
+
+            try {
+                const response = await fetch('/api/admin/login', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ email, password })
+                });
+
+                const result = await response.json();
+
+                if (response.ok && result.status === 'success') {
+                    // Store admin authentication tokens
+                    localStorage.setItem('admin_token', result.token);
+                    localStorage.setItem('admin_staff', JSON.stringify(result.staff));
+                    
+                    // Redirect to dashboard
+                    window.location.replace('/Admin/Dashboard');
+                } else {
+                    errorDiv.textContent = result.message || 'Đăng nhập thất bại. Vui lòng kiểm tra lại thông tin.';
+                    errorDiv.style.display = 'block';
+                }
+            } catch (err) {
+                console.error("Login error:", err);
+                errorDiv.textContent = 'Lỗi kết nối máy chủ. Vui lòng thử lại sau.';
+                errorDiv.style.display = 'block';
+            } finally {
+                submitBtn.disabled = false;
+                submitBtn.innerHTML = 'ĐĂNG NHẬP <i class="fa-solid fa-right-to-bracket" style="margin-left: 8px;"></i>';
+            }
+        }
+    </script>
+</body>
+</html>

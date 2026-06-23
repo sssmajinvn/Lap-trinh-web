@@ -1,0 +1,428 @@
+@{
+    Layout = "_AdminLayout";
+    ViewData["Title"] = "Quản Lý Danh Sách Phim";
+}
+
+<!-- 🍿 Main Movies Data Table -->
+<div class="data-card" style="margin-bottom: 2rem;">
+    <div class="card-header-actions">
+        <h3 class="card-title">Hệ thống Phim nội bộ</h3>
+        <div style="display: flex; gap: 10px;">
+            <button class="btn btn-secondary" onclick="openModal('tmdb-import-modal')">
+                <i class="fa-solid fa-cloud-arrow-down" style="margin-right: 6px;"></i> Import từ TMDB
+            </button>
+        </div>
+    </div>
+
+    <!-- Filter/Search Bar -->
+    <div class="table-filter-bar">
+        <div class="filter-group">
+            <div class="search-input-wrapper">
+                <i class="fa-solid fa-magnifying-glass"></i>
+                <input type="text" id="movie-search-input" class="form-input" placeholder="Tìm tên phim..." oninput="filterMovies()">
+            </div>
+            <select id="movie-status-filter" class="form-select" onchange="filterMovies()" style="max-width: 180px;">
+                <option value="">Tất cả trạng thái</option>
+                <option value="now_showing">Đang chiếu (Now Showing)</option>
+                <option value="coming_soon">Sắp chiếu (Coming Soon)</option>
+                <option value="hidden">Ẩn (Hidden)</option>
+            </select>
+        </div>
+    </div>
+
+    <!-- Table -->
+    <div class="admin-table-wrapper">
+        <table class="admin-table">
+            <thead>
+                <tr>
+                    <th>Poster & Tên Phim</th>
+                    <th>Ngày Khởi Chiếu</th>
+                    <th>Thời Lượng</th>
+                    <th>Độ Tuổi</th>
+                    <th>Trạng Thái</th>
+                    <th style="text-align: right;">Hành Động</th>
+                </tr>
+            </thead>
+            <tbody id="movies-tbody">
+                <tr>
+                    <td colspan="6" style="text-align: center; color: var(--text-muted);">Đang load danh sách phim...</td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<!-- 🔑 MODAL IMPORT TMDB -->
+<div id="tmdb-import-modal" class="modal-backdrop" onclick="closeModalOnBackdrop(event, 'tmdb-import-modal')">
+    <div class="modal-card admin-modal-card large">
+        <div class="modal-header">
+            <h3>Import phim trực tuyến từ TheMovieDB (TMDB)</h3>
+            <button class="modal-close-btn" onclick="closeModal('tmdb-import-modal')">&times;</button>
+        </div>
+        <div class="modal-body">
+            <div class="tmdb-search-box">
+                <input type="text" id="tmdb-query-input" class="form-input" placeholder="Nhập tên phim tiếng Anh hoặc Việt (VD: Deadpool, Lật mặt...)" onkeydown="if(event.key==='Enter') searchTmdb()">
+                <button class="btn btn-primary" onclick="searchTmdb()" style="margin: 0; padding: 10px 20px;">TÌM KIẾM</button>
+            </div>
+            <div id="tmdb-loading" style="text-align: center; display: none; padding: 2rem;">
+                <i class="fa-solid fa-spinner fa-spin fa-2x text-primary" style="margin-bottom: 8px;"></i>
+                <p>Đang quét phim trên TMDB...</p>
+            </div>
+            <div id="tmdb-results-container" class="tmdb-results" style="display: none;">
+                <!-- TMDB Results loaded here -->
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- 🔑 MODAL EDIT MOVIE -->
+<div id="edit-movie-modal" class="modal-backdrop" onclick="closeModalOnBackdrop(event, 'edit-movie-modal')">
+    <div class="modal-card admin-modal-card">
+        <div class="modal-header">
+            <h3>Chỉnh sửa thông tin phim</h3>
+            <button class="modal-close-btn" onclick="closeModal('edit-movie-modal')">&times;</button>
+        </div>
+        <div class="modal-body">
+            <form id="edit-movie-form" onsubmit="saveMovieEdit(event)">
+                <input type="hidden" id="edit-maphim">
+                
+                <div class="form-group">
+                    <label for="edit-tenphim">Tên Phim</label>
+                    <input type="text" id="edit-tenphim" class="form-input" required>
+                </div>
+                
+                <div class="form-grid-2">
+                    <div class="form-group">
+                        <label for="edit-thoiluong">Thời Lượng (Phút)</label>
+                        <input type="number" id="edit-thoiluong" class="form-input" required min="1">
+                    </div>
+                    <div class="form-group">
+                        <label for="edit-gioihantuoi">Giới Hạn Độ Tuổi (C13, C16, C18...)</label>
+                        <input type="number" id="edit-gioihantuoi" class="form-input" required min="0" placeholder="VD: 18">
+                    </div>
+                </div>
+
+                <div class="form-grid-2">
+                    <div class="form-group">
+                        <label for="edit-ngayramat">Ngày Khởi Chiếu</label>
+                        <input type="date" id="edit-ngayramat" class="form-input" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="edit-trangthai">Trạng Thái Hiển Thị</label>
+                        <select id="edit-trangthai" class="form-select" required>
+                            <option value="now_showing">Đang chiếu (now_showing)</option>
+                            <option value="coming_soon">Sắp chiếu (coming_soon)</option>
+                            <option value="hidden">Ẩn hiển thị (hidden)</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label for="edit-poster">URL Poster Ảnh</label>
+                    <input type="text" id="edit-poster" class="form-input" required>
+                </div>
+
+                <div class="form-group">
+                    <label for="edit-trailer">URL Trailer Youtube</label>
+                    <input type="text" id="edit-trailer" class="form-input" placeholder="VD: https://www.youtube.com/watch?v=...">
+                </div>
+
+                <div class="form-group">
+                    <label for="edit-mota">Mô Tả Tóm Tắt</label>
+                    <textarea id="edit-mota" class="form-input" rows="4" style="resize: vertical;" required></textarea>
+                </div>
+
+                <div style="display: flex; gap: 10px; justify-content: flex-end; margin-top: 1.5rem;">
+                    <button type="button" class="btn btn-secondary" onclick="closeModal('edit-movie-modal')" style="margin: 0;">Hủy</button>
+                    <button type="submit" class="btn btn-primary" style="margin: 0;">Lưu Thay Đổi</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        let allMovies = []; // In-memory local movie cache for dynamic filtering
+
+        document.addEventListener('DOMContentLoaded', function() {
+            loadLocalMovies();
+        });
+
+        // 1. Tải danh sách phim nội bộ
+        async function loadLocalMovies() {
+            try {
+                // Sử dụng api/movies chung đã có sẵn
+                const response = await fetch('/api/movies');
+                const result = await response.json();
+
+                if (response.ok && result.status === 'success') {
+                    allMovies = result.data;
+                    renderMoviesTable(allMovies);
+                }
+            } catch (err) {
+                console.error("Lỗi tải phim local:", err);
+            }
+        }
+
+        // 2. Render bảng danh sách phim
+        function renderMoviesTable(movies) {
+            const tbody = document.getElementById('movies-tbody');
+            tbody.innerHTML = '';
+
+            if (movies.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="6" style="text-align: center; color: var(--text-muted);">Không tìm thấy phim nào khớp bộ lọc</td></tr>';
+                return;
+            }
+
+            movies.forEach(m => {
+                const dateStr = new Date(m.ngayramat).toLocaleDateString('vi-VN');
+                tbody.innerHTML += `
+                    <tr id="movie-row-${m.maphim}">
+                        <td>
+                            <div class="movie-cell">
+                                <img src="${m.posterUrl || '/img/default-poster.png'}" class="movie-poster-mini" alt="${m.tenphim}">
+                                <div>
+                                    <div style="font-weight: 600; font-size: 0.95rem;">${m.tenphim}</div>
+                                    <div style="font-size: 0.75rem; color: var(--text-muted); margin-top: 2px;">
+                                        Thể loại: ${m.genres ? m.genres.join(', ') : 'Chưa phân loại'}
+                                    </div>
+                                </div>
+                            </div>
+                        </td>
+                        <td>${dateStr}</td>
+                        <td>${m.thoiluong} phút</td>
+                        <td>
+                            <span class="badge-age" style="background: rgba(229, 9, 20, 0.1); border: 1px solid var(--color-primary); color: var(--color-primary); padding: 4px 8px; border-radius: 4px; font-weight: 700; font-size: 0.75rem;">
+                                C${m.gioihantuoi}
+                            </span>
+                        </td>
+                        <td>
+                            <span class="badge-status ${m.trangthai}">
+                                ${m.trangthai === 'now_showing' ? 'Đang chiếu' : m.trangthai === 'coming_soon' ? 'Sắp chiếu' : 'Đang ẩn'}
+                            </span>
+                        </td>
+                        <td style="text-align: right;">
+                            <div style="display: inline-flex; gap: 8px;">
+                                <button class="btn btn-outline" onclick="openEditModal('${m.maphim}')" style="margin: 0; padding: 6px 12px; font-size: 0.8rem; border-radius: 6px;">
+                                    <i class="fa-solid fa-pen-to-square"></i> Sửa
+                                </button>
+                                <button class="btn btn-outline" onclick="deleteMovie('${m.maphim}')" style="margin: 0; padding: 6px 12px; font-size: 0.8rem; border-radius: 6px; color: #ff4757; border-color: rgba(255, 71, 87, 0.2);">
+                                    <i class="fa-solid fa-trash-can"></i> Xóa
+                                </button>
+                            </div>
+                        </td>
+                    </tr>
+                `;
+            });
+        }
+
+        // 3. Lọc danh sách phim động
+        function filterMovies() {
+            const query = document.getElementById('movie-search-input').value.toLowerCase().trim();
+            const status = document.getElementById('movie-status-filter').value;
+
+            let filtered = allMovies;
+
+            if (query) {
+                filtered = filtered.filter(m => m.tenphim.toLowerCase().includes(query));
+            }
+
+            if (status) {
+                filtered = filtered.filter(m => m.trangthai === status);
+            }
+
+            renderMoviesTable(filtered);
+        }
+
+        // 4. Tìm kiếm phim trực tuyến TMDB
+        async function searchTmdb() {
+            const query = document.getElementById('tmdb-query-input').value.trim();
+            const loading = document.getElementById('tmdb-loading');
+            const container = document.getElementById('tmdb-results-container');
+            const token = localStorage.getItem('admin_token');
+
+            if (!query) {
+                alert("Vui lòng nhập từ khóa tìm kiếm!");
+                return;
+            }
+
+            loading.style.display = 'block';
+            container.style.display = 'none';
+            container.innerHTML = '';
+
+            try {
+                const response = await fetch(`/api/admin/movies/search?query=${encodeURIComponent(query)}`, {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+                const result = await response.json();
+
+                if (response.ok && result.status === 'success') {
+                    const results = result.data;
+                    if (results.length === 0) {
+                        container.innerHTML = '<div style="grid-column: 1/-1; text-align: center; color: var(--text-muted); padding: 2rem;">Không tìm thấy phim phù hợp trên TMDB</div>';
+                    } else {
+                        results.forEach(m => {
+                            const poster = m.poster_path ? `https://image.tmdb.org/t/p/w300${m.poster_path}` : '/img/default-poster.png';
+                            const year = m.release_date ? m.release_date.split('-')[0] : 'N/A';
+                            container.innerHTML += `
+                                <div class="tmdb-item">
+                                    <img src="${poster}" alt="${m.title}">
+                                    <div class="tmdb-item-title" title="${m.title}">${m.title}</div>
+                                    <div class="tmdb-item-meta">Năm: ${year} | TMDB ID: ${m.id}</div>
+                                    <button class="btn btn-primary" onclick="importMovie(${m.id})" style="margin: 0; padding: 6px 12px; font-size: 0.8rem;">
+                                        <i class="fa-solid fa-file-import"></i> Thêm Nhanh
+                                    </button>
+                                </div>
+                            `;
+                        });
+                    }
+                    container.style.display = 'grid';
+                } else {
+                    alert(result.message || "Lỗi tìm kiếm TMDB");
+                }
+            } catch (err) {
+                console.error(err);
+                alert("Lỗi kết nối máy chủ");
+            } finally {
+                loading.style.display = 'none';
+            }
+        }
+
+        // 5. Import phim vào cơ sở dữ liệu
+        async function importMovie(tmdbId) {
+            const token = localStorage.getItem('admin_token');
+            try {
+                const response = await fetch('/api/admin/movies', {
+                    method: 'POST',
+                    headers: { 
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${token}`
+                    },
+                    body: JSON.stringify({ tmdbId: parseInt(tmdbId) })
+                });
+
+                const result = await response.json();
+                if (response.ok && result.status === 'success') {
+                    alert("Import phim thành công!");
+                    closeModal('tmdb-import-modal');
+                    loadLocalMovies(); // Reload local table
+                } else {
+                    alert(result.message || "Lỗi khi import phim");
+                }
+            } catch (err) {
+                console.error(err);
+                alert("Lỗi kết nối máy chủ");
+            }
+        }
+
+        // 6. Mở Modal chỉnh sửa và điền thông tin phim
+        function openEditModal(maphim) {
+            const m = allMovies.find(x => x.maphim === maphim);
+            if (!m) return;
+
+            document.getElementById('edit-maphim').value = m.maphim;
+            document.getElementById('edit-tenphim').value = m.tenphim;
+            document.getElementById('edit-thoiluong').value = m.thoiluong;
+            document.getElementById('edit-gioihantuoi').value = m.gioihantuoi;
+            
+            // Format date to YYYY-MM-DD
+            const rawDate = new Date(m.ngayramat);
+            const y = rawDate.getFullYear();
+            const month = (rawDate.getMonth() + 1).toString().padStart(2, '0');
+            const d = rawDate.getDate().toString().padStart(2, '0');
+            document.getElementById('edit-ngayramat').value = `${y}-${month}-${d}`;
+            
+            document.getElementById('edit-trangthai').value = m.trangthai;
+            document.getElementById('edit-poster').value = m.posterUrl || '';
+            document.getElementById('edit-trailer').value = m.trailerUrl || '';
+            document.getElementById('edit-mota').value = m.mota || '';
+
+            openModal('edit-movie-modal');
+        }
+
+        // 7. Lưu thay đổi chỉnh sửa phim
+        async function saveMovieEdit(event) {
+            event.preventDefault();
+            const maphim = document.getElementById('edit-maphim').value;
+            const token = localStorage.getItem('admin_token');
+
+            const payload = {
+                tenphim: document.getElementById('edit-tenphim').value,
+                thoiluong: parseInt(document.getElementById('edit-thoiluong').value),
+                gioihantuoi: parseInt(document.getElementById('edit-gioihantuoi').value),
+                ngayramat: new Date(document.getElementById('edit-ngayramat').value).toISOString(),
+                trangthai: document.getElementById('edit-trangthai').value,
+                posterUrl: document.getElementById('edit-poster').value,
+                trailerUrl: document.getElementById('edit-trailer').value,
+                mota: document.getElementById('edit-mota').value
+            };
+
+            try {
+                // Gọi API custom nội bộ trong AdminViewController
+                const response = await fetch(`/Admin/api/movies/update/${maphim}`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${token}`
+                    },
+                    body: JSON.stringify(payload)
+                });
+
+                const result = await response.json();
+                if (response.ok && result.status === 'success') {
+                    alert("Cập nhật phim thành công!");
+                    closeModal('edit-movie-modal');
+                    loadLocalMovies(); // Reload local table
+                } else {
+                    alert(result.message || "Lỗi lưu thay đổi!");
+                }
+            } catch (err) {
+                console.error(err);
+                alert("Lỗi kết nối khi gửi yêu cầu sửa.");
+            }
+        }
+
+        // 8. Xóa phim khỏi hệ thống
+        async function deleteMovie(maphim) {
+            if (!confirm("Bạn có chắc chắn muốn xóa phim này khỏi hệ thống? Phim có lịch chiếu sẽ bị chuyển về trạng thái Ẩn.")) {
+                return;
+            }
+
+            const token = localStorage.getItem('admin_token');
+            try {
+                // Gọi API custom nội bộ trong AdminViewController
+                const response = await fetch(`/Admin/api/movies/delete/${maphim}`, {
+                    method: 'POST',
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+
+                const result = await response.json();
+                if (response.ok && result.status === 'success') {
+                    alert(result.message);
+                    loadLocalMovies(); // Reload
+                } else {
+                    alert(result.message || "Lỗi xóa phim.");
+                }
+            } catch (err) {
+                console.error(err);
+                alert("Lỗi kết nối khi thực hiện xóa.");
+            }
+        }
+
+        // Modal open helpers
+        function openModal(id) {
+            document.getElementById(id).classList.add('active');
+        }
+
+        function closeModal(id) {
+            document.getElementById(id).classList.remove('active');
+        }
+
+        function closeModalOnBackdrop(e, id) {
+            if (e.target.id === id) {
+                closeModal(id);
+            }
+        }
+    </script>
+}
