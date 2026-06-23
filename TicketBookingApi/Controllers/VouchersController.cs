@@ -112,7 +112,8 @@ namespace TicketBookingApi.Controllers
                 if (isEligible)
                 {
                     var usedCount = voucher.LichSuKhuyenMais.Count(l => l.IdKhach == userId);
-                    if (usedCount >= 1)
+                    var maxUsesPerUser = voucher.SoLanDungToiDaMoiUser ?? 1;
+                    if (usedCount >= maxUsesPerUser)
                     {
                         isEligible = false;
                         reason = "Bạn đã sử dụng mã giảm giá này rồi";

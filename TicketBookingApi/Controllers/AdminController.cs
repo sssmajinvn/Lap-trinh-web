@@ -7,7 +7,7 @@ namespace TicketBookingApi.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
-    // [Authorize(Roles = "admin")] // Trong thực tế sẽ bật role này lên
+    [Authorize(Policy = "RequireAdmin")]
     public class AdminController : ControllerBase
     {
         private readonly ApplicationDbContext _context;

@@ -1,5 +1,6 @@
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using System.Collections.Concurrent;
 using System.IdentityModel.Tokens.Jwt;
@@ -16,15 +17,20 @@ namespace TicketBookingApi.Controllers
     {
         private readonly UserManager<Thongtintaikhoan> _userManager;
         private readonly IConfiguration _configuration;
+        private readonly ApplicationDbContext _context;
 
         // In-memory OTP store (Key: email, Value: (otp, expiresAt))
         private static readonly ConcurrentDictionary<string, (string Otp, DateTime ExpiresAt)> OtpStore = new();
 
-        public AuthController(UserManager<Thongtintaikhoan> userManager, IConfiguration configuration)
+        public AuthController(UserManager<Thongtintaikhoan> userManager, IConfiguration configuration, ApplicationDbContext context)
         {
             _userManager = userManager;
             _configuration = configuration;
+            _context = context;
         }
+
+        private static bool IsAccountDisabled(string? trangthai) =>
+            trangthai is "disabled" or "inactive";
 
         private string GenerateJwtToken(Thongtintaikhoan user, int expiryDays = 7)
         {
@@ -54,15 +60,23 @@ namespace TicketBookingApi.Controllers
         [HttpPost("register")]
         public async Task<IActionResult> Register([FromBody] RegisterDto dto)
         {
-            if (await _userManager.FindByNameAsync(dto.Mataikhoan) != null)
-                return BadRequest(new { status = "error", message = "Tài khoản đã tồn tại" });
-
-            if (await _userManager.FindByEmailAsync(dto.Email) != null)
+            if (await _context.Thongtintaikhoans.AnyAsync(u => u.Email == dto.Email))
                 return BadRequest(new { status = "error", message = "Email đã được sử dụng" });
+
+            if (await _context.Thongtintaikhoans.AnyAsync(u => u.Sdt == dto.Sdt))
+                return BadRequest(new { status = "error", message = "Số điện thoại đã được đăng ký" });
+
+            var maxId = await _context.Thongtintaikhoans.MaxAsync(u => (int?)u.IdKhach) ?? 0;
+            var maTaiKhoan = string.IsNullOrWhiteSpace(dto.Mataikhoan)
+                ? $"TK{(maxId + 1).ToString("D3")}"
+                : dto.Mataikhoan.Trim();
+
+            if (await _userManager.FindByNameAsync(maTaiKhoan) != null)
+                return BadRequest(new { status = "error", message = "Tài khoản đã tồn tại" });
 
             var user = new Thongtintaikhoan
             {
-                Mataikhoan = dto.Mataikhoan,
+                Mataikhoan = maTaiKhoan,
                 Hoten = dto.Hoten,
                 Email = dto.Email,
                 Sdt = dto.Sdt,
@@ -78,20 +92,22 @@ namespace TicketBookingApi.Controllers
             if (!result.Succeeded)
                 return BadRequest(new { status = "error", errors = result.Errors });
 
-            return StatusCode(201, new { status = "success", message = "Đăng ký thành công" });
+            return StatusCode(201, new { status = "success", message = "Đăng ký thành công", data = new { maTaiKhoan } });
         }
 
         // POST /api/auth/login
         [HttpPost("login")]
         public async Task<IActionResult> Login([FromBody] LoginDto dto)
         {
-            var user = await _userManager.FindByNameAsync(dto.UsernameOrEmail) ??
-                       await _userManager.FindByEmailAsync(dto.UsernameOrEmail);
+            var loginKey = dto.UsernameOrEmail.Trim();
+            var user = await _userManager.FindByNameAsync(loginKey)
+                       ?? await _userManager.FindByEmailAsync(loginKey)
+                       ?? await _context.Thongtintaikhoans.FirstOrDefaultAsync(u => u.Sdt == loginKey);
 
             if (user == null)
                 return NotFound(new { status = "error", message = "Tài khoản không tồn tại" });
 
-            if (user.Trangthai == "disabled")
+            if (IsAccountDisabled(user.Trangthai))
                 return StatusCode(403, new { status = "error", message = "Tài khoản của bạn đã bị vô hiệu hóa. Vui lòng liên hệ hỗ trợ." });
 
             if (!await _userManager.CheckPasswordAsync(user, dto.Password))
@@ -131,7 +147,7 @@ namespace TicketBookingApi.Controllers
             if (user == null)
                 return NotFound(new { status = "error", message = "Email này không tồn tại trong hệ thống. Vui lòng kiểm tra lại hoặc đăng ký tài khoản mới." });
 
-            if (user.Trangthai == "disabled")
+            if (IsAccountDisabled(user.Trangthai))
                 return StatusCode(403, new { status = "error", message = "Tài khoản của bạn đã bị vô hiệu hóa. Vui lòng liên hệ hỗ trợ để được giúp đỡ." });
 
             var otp = new Random().Next(100000, 999999).ToString();
@@ -144,7 +160,6 @@ namespace TicketBookingApi.Controllers
             {
                 status = "success",
                 message = "Chúng tôi đã gửi mã xác nhận vào email của bạn.",
-                debug_otp = otp, // Chỉ giữ lại để dễ test/debug
                 expiresIn = "5 minutes"
             });
         }

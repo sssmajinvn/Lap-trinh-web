@@ -24,7 +24,9 @@ namespace TicketBookingApi.Controllers
         private int GetUserId()
         {
             var raw = User.FindFirstValue(ClaimTypes.NameIdentifier);
-            return int.TryParse(raw, out var id) ? id : 0;
+            if (!int.TryParse(raw, out var id) || id == 0)
+                return -1;
+            return id;
         }
 
         // GET /api/users/profile
@@ -32,6 +34,8 @@ namespace TicketBookingApi.Controllers
         public async Task<IActionResult> GetProfile()
         {
             var userId = GetUserId();
+            if (userId < 0)
+                return Unauthorized(new { status = "error", message = "Token không hợp lệ" });
             var user = await _context.Thongtintaikhoans
                 .Where(u => u.IdKhach == userId)
                 .Select(u => new
@@ -61,6 +65,8 @@ namespace TicketBookingApi.Controllers
         public async Task<IActionResult> UpdateProfile([FromBody] UpdateProfileDto dto)
         {
             var userId = GetUserId();
+            if (userId < 0)
+                return Unauthorized(new { status = "error", message = "Token không hợp lệ" });
             var user = await _context.Thongtintaikhoans.FindAsync(userId);
 
             if (user == null)
@@ -94,6 +100,8 @@ namespace TicketBookingApi.Controllers
         public async Task<IActionResult> ChangePassword([FromBody] ChangePasswordDto dto)
         {
             var userId = GetUserId();
+            if (userId < 0)
+                return Unauthorized(new { status = "error", message = "Token không hợp lệ" });
             var user = await _context.Thongtintaikhoans.FindAsync(userId);
 
             if (user == null)
@@ -117,6 +125,8 @@ namespace TicketBookingApi.Controllers
             [FromQuery] string? status = null)
         {
             var userId = GetUserId();
+            if (userId < 0)
+                return Unauthorized(new { status = "error", message = "Token không hợp lệ" });
             page = Math.Max(1, page);
             limit = Math.Clamp(limit, 1, 50);
 

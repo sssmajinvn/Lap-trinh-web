@@ -1,6 +1,8 @@
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.SignalR;
 using Microsoft.EntityFrameworkCore;
+using System.Security.Claims;
 using System.Text.Json;
 using TicketBookingApi.Hubs;
 using TicketBookingApi.Models;
@@ -19,11 +21,14 @@ namespace TicketBookingApi.Controllers
         private readonly ILogger<PaymentsController> _logger;
         private readonly INotificationService _notificationService;
         private readonly IConfiguration _configuration;
+        private readonly IPendingOrderMetadataService _pendingOrderService;
+        private readonly IMembershipService _membershipService;
 
         public PaymentsController(IVNPayService vnPayService, IMoMoService moMoService,
             ApplicationDbContext context, IHubContext<SeatHub> hubContext,
             ILogger<PaymentsController> logger, INotificationService notificationService,
-            IConfiguration configuration)
+            IConfiguration configuration, IPendingOrderMetadataService pendingOrderService,
+            IMembershipService membershipService)
         {
             _vnPayService = vnPayService;
             _moMoService = moMoService;
@@ -32,6 +37,14 @@ namespace TicketBookingApi.Controllers
             _logger = logger;
             _notificationService = notificationService;
             _configuration = configuration;
+            _pendingOrderService = pendingOrderService;
+            _membershipService = membershipService;
+        }
+
+        private int? GetUserId()
+        {
+            var raw = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            return int.TryParse(raw, out var id) ? id : null;
         }
 
         // ===== VNPay =====
@@ -190,11 +203,19 @@ namespace TicketBookingApi.Controllers
         // ===== Sinh URL thanh toán =====
 
         /// <summary>Sinh URL thanh toán riêng lẻ sau khi đã chọn xong bắp nước/voucher</summary>
+        [Authorize]
         [HttpPost("create-url")]
         public async Task<IActionResult> CreatePaymentUrl([FromBody] CreatePaymentUrlDto request)
         {
+            var userId = GetUserId();
+            if (userId == null)
+                return Unauthorized(new { status = "error", message = "Token không hợp lệ" });
+
             var order = await _context.Dondatves.FirstOrDefaultAsync(d => d.Madondatve == request.MaDonDatVe);
             if (order == null) return NotFound(new { status = "error", message = "Không tìm thấy đơn đặt vé" });
+
+            if (order.IdKhach != userId.Value)
+                return StatusCode(403, new { status = "error", message = "Bạn không có quyền thanh toán đơn này" });
             
             if (order.Trangthai != "pending")
                 return BadRequest(new { status = "error", message = "Đơn đặt vé đã được thanh toán hoặc hủy" });
@@ -255,8 +276,30 @@ namespace TicketBookingApi.Controllers
                 seatIds = tickets.Select(t => t.Maghe).ToList();
                 showtimeId = tickets.FirstOrDefault()?.Malichchieu;
 
+                // Ghi nhận voucher khi thanh toán thành công (không ghi lúc giữ ghế)
+                var meta = _pendingOrderService.Get(order.Madondatve);
+                if (meta?.VoucherId != null)
+                {
+                    _context.LichSuKhuyenMais.Add(new LichSuKhuyenMai
+                    {
+                        IdKhuyenMai = meta.VoucherId.Value,
+                        IdKhach = order.IdKhach,
+                        Madondatve = order.Madondatve,
+                        GiaTriGiamThucTe = meta.VoucherDiscountAmount,
+                        NgaySuDung = DateTime.UtcNow
+                    });
+
+                    var voucher = await _context.KhuyenMais.FindAsync(meta.VoucherId.Value);
+                    if (voucher != null)
+                        voucher.SoLuongDaDung = (voucher.SoLuongDaDung ?? 0) + 1;
+                }
+
                 await _context.SaveChangesAsync();
                 await tx.CommitAsync();
+
+                // Cộng chi tiêu và nâng hạng thành viên
+                await _membershipService.ApplyPaymentSpendingAsync(order.IdKhach, order.Tongtien);
+                _pendingOrderService.Remove(order.Madondatve);
             }
             catch
             {
@@ -300,6 +343,8 @@ namespace TicketBookingApi.Controllers
                 .ToListAsync();
             tickets.ForEach(t => t.Trangthai = "cancelled");
             await _context.SaveChangesAsync();
+
+            _pendingOrderService.Remove(order.Madondatve);
 
             // Broadcast SignalR để nhả ghế cho các client khác
             var seatIds = tickets.Select(t => t.Maghe).ToList();
