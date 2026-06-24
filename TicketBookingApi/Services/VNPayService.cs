@@ -1,6 +1,5 @@
 using System.Security.Cryptography;
 using System.Text;
-using System.Web;
 
 namespace TicketBookingApi.Services
 {
@@ -31,7 +30,7 @@ namespace TicketBookingApi.Services
                 { "vnp_Version", "2.1.0" },
                 { "vnp_Command", "pay" },
                 { "vnp_TmnCode", tmnCode! },
-                { "vnp_Amount", ((long)(amount * 100)).ToString() }, // VNPay requires multiplying by 100
+                { "vnp_Amount", ((long)(amount * 100)).ToString() },
                 { "vnp_CreateDate", DateTime.Now.ToString("yyyyMMddHHmmss") },
                 { "vnp_CurrCode", "VND" },
                 { "vnp_IpAddr", ipAddr },
@@ -42,37 +41,24 @@ namespace TicketBookingApi.Services
                 { "vnp_TxnRef", orderId }
             };
 
-            // Build query string
             var sortedParams = vnp_Params.OrderBy(kv => kv.Key);
             var query = new StringBuilder();
-            var hashData = new StringBuilder();
 
             foreach (var kv in sortedParams)
             {
                 if (!string.IsNullOrEmpty(kv.Value))
                 {
-                    // VNPay chuẩn yêu cầu UrlEncode
                     query.Append(VnPayUrlEncode(kv.Key) + "=" + VnPayUrlEncode(kv.Value) + "&");
                 }
             }
 
             var queryString = query.ToString().TrimEnd('&');
-            var hashString = queryString; // Trong VNPay v2.1.0, hashString chính là queryString (đã UrlEncode)
+            var hashString = queryString;
 
             var vnp_SecureHash = HmacSha512(hashSecret!, hashString);
             queryString += "&vnp_SecureHash=" + vnp_SecureHash;
 
-            var finalUrl = baseUrl + "?" + queryString;
-            
-            // LOG ĐỂ DEBUG VNPay
-            Console.WriteLine("=== VNPAY DEBUG INFO ===");
-            Console.WriteLine("vnp_Params JSON: " + System.Text.Json.JsonSerializer.Serialize(vnp_Params));
-            Console.WriteLine("hashString: " + hashString);
-            Console.WriteLine("vnp_SecureHash: " + vnp_SecureHash);
-            Console.WriteLine("finalUrl: " + finalUrl);
-            Console.WriteLine("========================");
-
-            return finalUrl;
+            return baseUrl + "?" + queryString;
         }
 
         public bool ValidateSignature(IQueryCollection queryData)
@@ -109,8 +95,6 @@ namespace TicketBookingApi.Services
         private static string VnPayUrlEncode(string value)
         {
             if (string.IsNullOrEmpty(value)) return string.Empty;
-            // Uri.EscapeDataString dùng chuẩn RFC 3986 (đổi khoảng trắng thành %20, các ký tự khác thành hex in hoa)
-            // VNPay backend (PHP) và thư viện vnpay Node.js dùng urlencode/URLSearchParams đổi khoảng trắng thành +
             return Uri.EscapeDataString(value).Replace("%20", "+");
         }
 

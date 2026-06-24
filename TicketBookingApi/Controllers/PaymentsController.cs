@@ -45,13 +45,14 @@ namespace TicketBookingApi.Controllers
             var frontendUrl = _configuration["FrontendUrl"] ?? "http://localhost:5173";
 
             if (!_vnPayService.ValidateSignature(Request.Query))
-                return Redirect($"{frontendUrl}/payment/failed?message=InvalidSignature");
+                return Redirect("/");
 
             var responseCode = Request.Query["vnp_ResponseCode"].ToString();
-            var orderId = Request.Query["vnp_TxnRef"].ToString();
+            var txnRef = Request.Query["vnp_TxnRef"].ToString();
             var transId = Request.Query["vnp_TransactionNo"].ToString();
 
-            var order = await _context.Dondatves.FirstOrDefaultAsync(d => d.Madondatve == orderId);
+            var order = await ResolveOrderFromTxnRefAsync(txnRef);
+            var orderId = order?.Madondatve ?? txnRef;
 
             if (responseCode == "00")
             {
@@ -64,7 +65,7 @@ namespace TicketBookingApi.Controllers
                     _logger.LogInformation("VNPay Return: Order {OrderId} confirmed PAID via Return URL", orderId);
                 }
 
-                return Redirect($"{frontendUrl}/payment/success?orderId={orderId}");
+                return Redirect($"/Home/Success?orderId={orderId}");
             }
             else
             {
@@ -73,7 +74,7 @@ namespace TicketBookingApi.Controllers
                 {
                     await MarkPaymentFailed(order, transId);
                 }
-                return Redirect($"{frontendUrl}/payment/failed?orderId={orderId}");
+                return Redirect("/");
             }
         }
 
@@ -88,13 +89,14 @@ namespace TicketBookingApi.Controllers
             }
 
             var responseCode = Request.Query["vnp_ResponseCode"].ToString();
-            var orderId = Request.Query["vnp_TxnRef"].ToString();
+            var txnRef = Request.Query["vnp_TxnRef"].ToString();
             var transId = Request.Query["vnp_TransactionNo"].ToString();
-            var amountStr = Request.Query["vnp_Amount"].ToString();
 
-            var order = await _context.Dondatves.FirstOrDefaultAsync(d => d.Madondatve == orderId);
+            var order = await ResolveOrderFromTxnRefAsync(txnRef);
             if (order == null)
                 return Ok(new { RspCode = "01", Message = "Order not found" });
+
+            var orderId = order.Madondatve;
 
             // Tránh xử lý trùng lặp
             if (order.Trangthai == "paid")
@@ -123,7 +125,7 @@ namespace TicketBookingApi.Controllers
             var frontendUrl = _configuration["FrontendUrl"] ?? "http://localhost:5173";
 
             if (!_moMoService.ValidateSignature(Request.Query))
-                return Redirect($"{frontendUrl}/payment/failed?message=InvalidSignature");
+                return Redirect("/");
 
             var resultCode = Request.Query["resultCode"].ToString();
             var orderId = Request.Query["orderId"].ToString();
@@ -137,7 +139,7 @@ namespace TicketBookingApi.Controllers
                 {
                     await ConfirmPaymentSuccess(order, transId);
                 }
-                return Redirect($"{frontendUrl}/payment/success?orderId={orderId}");
+                return Redirect($"/Home/Success?orderId={orderId}");
             }
             else
             {
@@ -145,7 +147,7 @@ namespace TicketBookingApi.Controllers
                 {
                     await MarkPaymentFailed(order, transId);
                 }
-                return Redirect($"{frontendUrl}/payment/failed?orderId={orderId}");
+                return Redirect("/");
             }
         }
 
@@ -203,17 +205,24 @@ namespace TicketBookingApi.Controllers
 
             // Cập nhật phương thức thanh toán vào Thongtinthanhtoan
             var payment = await _context.Thongtinthanhtoans.FirstOrDefaultAsync(t => t.Madondatve == order.Madondatve && t.Trangthai == "pending");
-            if (payment != null)
-            {
-                payment.Phuongthucthanhtoan = request.PaymentMethod;
-                await _context.SaveChangesAsync();
-            }
+            if (payment == null)
+                return BadRequest(new { status = "error", message = "Không tìm thấy thông tin thanh toán" });
+
+            payment.Phuongthucthanhtoan = request.PaymentMethod;
+            await _context.SaveChangesAsync();
+
+            if (order.Tongtien < 5000)
+                return BadRequest(new { status = "error", message = "Số tiền thanh toán tối thiểu là 5.000 VND" });
 
             string? paymentUrl = null;
             if (request.PaymentMethod == "vnpay")
             {
                 var ipAddr = Request.Headers["X-Forwarded-For"].FirstOrDefault() ?? "127.0.0.1";
-                paymentUrl = _vnPayService.CreatePaymentUrl(order.Madondatve, (decimal)order.Tongtien, $"Thanh toan ve xem phim DON {order.Madondatve}", ipAddr);
+                paymentUrl = _vnPayService.CreatePaymentUrl(
+                    order.Madondatve,
+                    (decimal)order.Tongtien,
+                    $"Thanh toan ve xem phim DON {order.Madondatve}",
+                    ipAddr);
             }
             else if (request.PaymentMethod == "momo")
             {
@@ -227,6 +236,18 @@ namespace TicketBookingApi.Controllers
         }
 
         // ===== Helper methods =====
+
+        private async Task<Dondatve?> ResolveOrderFromTxnRefAsync(string txnRef)
+        {
+            var payment = await _context.Thongtinthanhtoans
+                .Include(t => t.MadondatveNavigation)
+                .FirstOrDefaultAsync(t => t.Mathanhtoan == txnRef);
+
+            if (payment?.MadondatveNavigation != null)
+                return payment.MadondatveNavigation;
+
+            return await _context.Dondatves.FirstOrDefaultAsync(d => d.Madondatve == txnRef);
+        }
 
         private async Task ConfirmPaymentSuccess(Dondatve order, string transId)
         {

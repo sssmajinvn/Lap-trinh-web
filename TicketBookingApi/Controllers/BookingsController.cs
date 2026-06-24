@@ -380,7 +380,11 @@ namespace TicketBookingApi.Controllers
                     movieTitle, 
                     showtime = showtimeStr,
                     theater = theaterName,
-                    room = roomName
+                    room = roomName,
+                    tickets = order.Vexemphims.Select(v => new {
+                        v.Mavexemphim,
+                        TenGhe = v.MagheNavigation != null ? v.MagheNavigation.Mahangghe + v.MagheNavigation.Soghe : v.Maghe
+                    }).ToList()
                 } 
             });
         }

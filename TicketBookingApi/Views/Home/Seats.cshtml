@@ -551,7 +551,7 @@
                 const result = await response.json();
                 if ((response.status === 201 || response.status === 200) && result.status === 'success') {
                     // Chuyển hướng sang trang chờ thanh toán hoặc trang thành công
-                    alert("Đặt chỗ thành công! Đang chuyển đến trang thanh toán...");
+
                     
                     // Nếu là VNPAY/PayOS và có URL trả về (giả sử backend có trả về paymentUrl)
                     if (result.data.paymentUrl) {

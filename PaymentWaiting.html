@@ -298,12 +298,12 @@
                         'Content-Type': 'application/json',
                         'Authorization': `Bearer ${token}`
                     },
-                    body: JSON.stringify({ maDonDatVe: orderId, paymentGateway: 'vnpay' })
+                    body: JSON.stringify({ maDonDatVe: orderId, paymentMethod: 'vnpay' })
                 });
                 
                 const result = await response.json();
                 if(result.status === 'success' && result.data.paymentUrl) {
-                    window.location.href = result.data.paymentUrl;
+                    window.open(result.data.paymentUrl, '_blank');
                 } else {
                     alert(result.message || "Không thể tạo liên kết thanh toán.");
                 }

@@ -53,10 +53,10 @@
         </div>
 
         <div style="border-top: 1px dashed var(--glass-border); padding-top: 1.5rem; margin-bottom: 1rem;">
-            <div id="qr-container">
-                <img id="ticket-qr" src="" alt="QR Code" style="width: 180px; height: 180px; background: #fff; padding: 10px; border-radius: 8px;">
-                <p style="font-size: 0.8rem; color: var(--text-muted); margin-top: 0.5rem;">Đưa mã này cho nhân viên tại quầy soát vé</p>
+            <div id="qr-container" style="display: flex; gap: 15px; justify-content: center; flex-wrap: wrap;">
+                <!-- QR Codes sẽ được JS sinh ra ở đây -->
             </div>
+            <p style="font-size: 0.85rem; color: var(--text-muted); margin-top: 1rem; text-align: center;">Đưa mã này cho nhân viên tại quầy soát vé</p>
         </div>
     </div>
 
@@ -102,9 +102,18 @@
                     document.getElementById('order-room').textContent = order.room || "Phòng Chiếu";
                     document.getElementById('order-seats').textContent = "Đã xác nhận";
 
-                    // Cập nhật QR (Sử dụng mã đơn hàng làm nội dung QR)
-                    const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=ticket_${orderId}`;
-                    document.getElementById('ticket-qr').src = qrUrl;
+                    // Cập nhật QR Code duy nhất cho cả đơn hàng
+                    const qrContainer = document.getElementById('qr-container');
+                    qrContainer.innerHTML = '';
+                    const baseUrl = window.location.origin; // e.g. https://ngrok...
+                    const qrDataUrl = `${baseUrl}/Home/Ticket/${orderId}`;
+                    const qrImageSrc = `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(qrDataUrl)}`;
+                            
+                    qrContainer.innerHTML = `
+                        <div style="text-align: center; background: #fff; padding: 10px; border-radius: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.1);">
+                            <img src="${qrImageSrc}" alt="QR Đơn hàng ${orderId}" style="width: 180px; height: 180px;">
+                        </div>
+                    `;
                 }
             } catch (err) {
                 console.error(err);

@@ -32,16 +32,16 @@ namespace TicketBookingApi.Services
 
         public async Task<TmdbMovieDetail?> GetMovieDetailAsync(int tmdbId)
         {
-            var client = _httpClientFactory.CreateClient();
-            var url = $"{TmdbBaseUrl}/movie/{tmdbId}?api_key={_apiKey}&append_to_response=videos,credits";
-            var response = await client.GetAsync(url);
-            if (!response.IsSuccessStatusCode) return null;
-            var json = await response.Content.ReadAsStringAsync();
             try
             {
+                var client = _httpClientFactory.CreateClient();
+                var url = $"{TmdbBaseUrl}/movie/{tmdbId}?api_key={_apiKey}&append_to_response=videos,credits";
+                var response = await client.GetAsync(url);
+                if (!response.IsSuccessStatusCode) return null;
+                var json = await response.Content.ReadAsStringAsync();
                 return JsonSerializer.Deserialize<TmdbMovieDetail>(json, TmdbJsonOptions);
             }
-            catch (JsonException)
+            catch (Exception)
             {
                 return null;
             }
@@ -49,12 +49,19 @@ namespace TicketBookingApi.Services
 
         public async Task<TmdbTrendingResult?> GetTrendingMoviesAsync(int page = 1)
         {
-            var client = _httpClientFactory.CreateClient();
-            var url = $"{TmdbBaseUrl}/trending/movie/week?api_key={_apiKey}&page={page}";
-            var response = await client.GetAsync(url);
-            if (!response.IsSuccessStatusCode) return null;
-            var json = await response.Content.ReadAsStringAsync();
-            return JsonSerializer.Deserialize<TmdbTrendingResult>(json, TmdbJsonOptions);
+            try
+            {
+                var client = _httpClientFactory.CreateClient();
+                var url = $"{TmdbBaseUrl}/trending/movie/week?api_key={_apiKey}&page={page}";
+                var response = await client.GetAsync(url);
+                if (!response.IsSuccessStatusCode) return null;
+                var json = await response.Content.ReadAsStringAsync();
+                return JsonSerializer.Deserialize<TmdbTrendingResult>(json, TmdbJsonOptions);
+            }
+            catch (Exception)
+            {
+                return null;
+            }
         }
     }
 

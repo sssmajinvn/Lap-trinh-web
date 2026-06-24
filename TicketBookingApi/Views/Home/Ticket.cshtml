@@ -1,0 +1,238 @@
+@{
+    Layout = null;
+}
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Thông tin vé - @ViewData["MaVe"]</title>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        body {
+            background-color: #0b0f19;
+            color: #f5f6fa;
+            font-family: 'Outfit', sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            margin: 0;
+            padding: 20px;
+            background: radial-gradient(circle at top right, rgba(229, 9, 20, 0.1), transparent), radial-gradient(circle at bottom left, rgba(22, 31, 48, 1), #0b0f19);
+        }
+        .ticket-card {
+            background: rgba(22, 31, 48, 0.65);
+            backdrop-filter: blur(15px);
+            border-radius: 16px;
+            width: 100%;
+            max-width: 420px;
+            overflow: hidden;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.6);
+            border: 1px solid rgba(255,255,255,0.08);
+            position: relative;
+        }
+        .ticket-header {
+            background: #e50914;
+            padding: 24px;
+            text-align: center;
+            position: relative;
+        }
+        .ticket-header h2 {
+            margin: 0;
+            font-size: 26px;
+            letter-spacing: 2px;
+            font-weight: 800;
+            color: white;
+            text-shadow: 0 2px 4px rgba(0,0,0,0.3);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        /* Hiệu ứng xé vé */
+        .ticket-card::before, .ticket-card::after {
+            content: '';
+            position: absolute;
+            top: 76px;
+            width: 30px;
+            height: 30px;
+            background: #0b0f19;
+            border-radius: 50%;
+            z-index: 2;
+        }
+        .ticket-card::before { left: -15px; }
+        .ticket-card::after { right: -15px; }
+
+        .ticket-body {
+            padding: 30px 24px 24px;
+            border-top: 2px dashed rgba(255,255,255,0.15);
+            margin-top: -2px; /* overlaps the cut */
+        }
+        .info-group {
+            margin-bottom: 20px;
+        }
+        .info-label {
+            font-size: 13px;
+            color: #a0aec0;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-bottom: 6px;
+            font-weight: 600;
+        }
+        .info-value {
+            font-size: 18px;
+            font-weight: 700;
+        }
+        .flex-row {
+            display: flex;
+            justify-content: space-between;
+            gap: 20px;
+        }
+        .flex-col {
+            flex: 1;
+        }
+        
+        .status-badge {
+            display: inline-flex;
+            justify-content: center;
+            align-items: center;
+            gap: 8px;
+            padding: 12px 20px;
+            border-radius: 8px;
+            font-weight: 700;
+            font-size: 16px;
+            text-align: center;
+            width: 100%;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            box-sizing: border-box;
+        }
+        .status-active {
+            background: rgba(46, 213, 115, 0.1);
+            color: #2ed573;
+            border: 1px dashed #2ed573;
+        }
+        .status-used {
+            background: rgba(160, 174, 192, 0.1);
+            color: #a0aec0;
+            border: 1px dashed #a0aec0;
+        }
+        .status-expired {
+            background: rgba(255, 71, 87, 0.1);
+            color: #ff4757;
+            border: 1px dashed #ff4757;
+        }
+        .ticket-footer {
+            background: rgba(0,0,0,0.2);
+            padding: 24px;
+            text-align: center;
+            font-size: 13px;
+            color: #a0aec0;
+        }
+        .qr-placeholder {
+            margin: 20px auto;
+            width: 160px;
+            height: 160px;
+            background: white;
+            padding: 10px;
+            border-radius: 12px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+        }
+        .qr-placeholder img {
+            width: 100%;
+            height: 100%;
+            display: block;
+        }
+        .ticket-id {
+            font-size: 15px;
+            letter-spacing: 1px;
+            color: #fff;
+            background: rgba(255,255,255,0.1);
+            padding: 4px 12px;
+            border-radius: 4px;
+            display: inline-block;
+            margin-bottom: 10px;
+            font-family: monospace;
+        }
+    </style>
+</head>
+<body>
+    <div class="ticket-card">
+        <div class="ticket-header">
+            <h2><i class="fa-solid fa-film"></i> TICKET CINEMA</h2>
+        </div>
+        <div class="ticket-body">
+            <div class="info-group">
+                <div class="info-label">Phim</div>
+                <div class="info-value" style="font-size: 24px; color: #ff9f43; line-height: 1.2;">@ViewData["TenPhim"]</div>
+            </div>
+            <div class="info-group">
+                <div class="info-label">Rạp Phim</div>
+                <div class="info-value">@ViewData["TenRap"]</div>
+            </div>
+            
+            <div class="flex-row">
+                <div class="info-group flex-col">
+                    <div class="info-label"><i class="fa-regular fa-calendar"></i> Ngày chiếu</div>
+                    <div class="info-value">@ViewData["NgayChieu"]</div>
+                </div>
+                <div class="info-group flex-col" style="text-align: right;">
+                    <div class="info-label"><i class="fa-regular fa-clock"></i> Giờ chiếu</div>
+                    <div class="info-value">@ViewData["GioChieu"]</div>
+                </div>
+            </div>
+
+            <div class="flex-row">
+                <div class="info-group flex-col">
+                    <div class="info-label"><i class="fa-solid fa-desktop"></i> Phòng</div>
+                    <div class="info-value">@ViewData["TenPhong"]</div>
+                </div>
+                <div class="info-group flex-col" style="text-align: right;">
+                    <div class="info-label"><i class="fa-solid fa-chair"></i> Ghế</div>
+                    <div class="info-value" style="color: #e50914; font-size: 22px;">@ViewData["TenGhe"]</div>
+                </div>
+            </div>
+
+            <div class="info-group" style="margin-top: 10px;">
+                <div class="status-badge @ViewData["StatusClass"]">
+                    @if (ViewData["StatusClass"]?.ToString() == "status-active")
+                    {
+                        <i class="fa-solid fa-check-circle"></i> <span>HỢP LỆ (VALID)</span>
+                    }
+                    else if (ViewData["StatusClass"]?.ToString() == "status-used")
+                    {
+                        <i class="fa-solid fa-ban"></i> <span>ĐÃ SỬ DỤNG</span>
+                    }
+                    else
+                    {
+                        <i class="fa-solid fa-times-circle"></i> <span>HẾT HẠN</span>
+                    }
+                </div>
+            </div>
+        </div>
+        
+        <div class="ticket-footer">
+            <div class="ticket-id">#@ViewData["MaDonDatVe"]</div>
+            <div class="qr-placeholder" id="qr-wrapper">
+                <!-- QR Image generated by JS -->
+            </div>
+            <div style="margin-top: 10px;">Vui lòng xuất trình màn hình này cho nhân viên soát vé. Không làm mới trang lúc soát vé.</div>
+        </div>
+    </div>
+
+    <script>
+        // Generate QR code using current domain dynamically
+        document.addEventListener('DOMContentLoaded', function() {
+            var orderId = "@ViewData["MaDonDatVe"]";
+            var currentUrl = window.location.origin + "/Home/Ticket/" + orderId;
+            var qrUrl = "https://api.qrserver.com/v1/create-qr-code/?size=160x160&data=" + encodeURIComponent(currentUrl);
+            
+            var qrPlaceholder = document.getElementById('qr-wrapper');
+            qrPlaceholder.innerHTML = '<img src="' + qrUrl + '" alt="QR Code">';
+        });
+    </script>
+</body>
+</html>

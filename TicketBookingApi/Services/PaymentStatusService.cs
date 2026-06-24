@@ -31,6 +31,7 @@ namespace TicketBookingApi.Services
         private readonly IPendingOrderMetadataService _pendingOrderService;
         private readonly IMembershipService _membershipService;
         private readonly ILogger<PaymentStatusService> _logger;
+        private readonly IConfiguration _configuration;
 
         public PaymentStatusService(
             ApplicationDbContext context,
@@ -39,7 +40,8 @@ namespace TicketBookingApi.Services
             IEmailService emailService,
             IPendingOrderMetadataService pendingOrderService,
             IMembershipService membershipService,
-            ILogger<PaymentStatusService> logger)
+            ILogger<PaymentStatusService> logger,
+            IConfiguration configuration)
         {
             _context = context;
             _hubContext = hubContext;
@@ -48,6 +50,7 @@ namespace TicketBookingApi.Services
             _pendingOrderService = pendingOrderService;
             _membershipService = membershipService;
             _logger = logger;
+            _configuration = configuration;
         }
 
         public async Task<PaymentStatusResult> UpdatePaymentStatusAsync(string paymentId, string requestedStatus, string? transactionId = null)
@@ -89,9 +92,12 @@ namespace TicketBookingApi.Services
                 {
                     payment.Thoidiemthanhtoan = DateTime.UtcNow;
                     order.Trangthai = "paid";
+                    var baseUrl = "https://localhost:7100";
                     foreach (var ticket in tickets)
                     {
                         ticket.Trangthai = "active";
+                        // Tạo ra đường dẫn URL truy cập vào web kiểm tra khi bị quét QR
+                        ticket.Qrcode = $"{baseUrl}/Home/Ticket/{ticket.Mavexemphim}";
                     }
                 }
                 else if (normalizedRequestedStatus == "failed" || normalizedRequestedStatus == "cancelled")

@@ -131,5 +131,66 @@ namespace TicketBookingApi.Controllers
         {
             return View();
         }
+
+        [Route("Home/Ticket/{orderCode}")]
+        public async Task<IActionResult> Ticket(string orderCode)
+        {
+            if (string.IsNullOrEmpty(orderCode)) return Content("<h1 style=\"color:white;text-align:center;font-family:sans-serif;\">Không tìm thấy vé</h1>", "text/html");
+
+            var query = await (from v in _context.Vexemphims
+                         join g in _context.Ghengois on v.Maghe equals g.Maghe into vg
+                         from g in vg.DefaultIfEmpty()
+                         join lc in _context.Lichchieus on v.Malichchieu equals lc.Malichchieu
+                         join p in _context.Phims on lc.Maphim equals p.Maphim
+                         join pr in _context.Phongrapphims on lc.Maphong equals pr.Maphong
+                         join r in _context.Rapphims on pr.Marapphim equals r.Marapphim
+                         where v.Madondatve == orderCode
+                         select new
+                         {
+                             maDonDatVe = v.Madondatve,
+                             trangthai = v.Trangthai,
+                             tenGhe = (g == null ? "" : g.Mahangghe + g.Soghe),
+                             tenPhim = p.Tenphim,
+                             gioChieu = lc.Giochieu,
+                             tenRapPhim = r.Tenrapphim,
+                             tenPhong = pr.Tenphong,
+                             ngayChieu = lc.Ngaychieu
+                         }).ToListAsync();
+
+            if (query == null || !query.Any())
+            {
+                return Content("<h1 style=\"color:white;text-align:center;font-family:sans-serif;\">Không tìm thấy vé</h1>", "text/html");
+            }
+            
+            var firstTicket = query.First();
+            var allSeats = string.Join(", ", query.Select(q => q.tenGhe).OrderBy(s => s));
+
+            ViewData["TenPhim"] = firstTicket.tenPhim;
+            ViewData["TenRap"] = firstTicket.tenRapPhim;
+            ViewData["NgayChieu"] = firstTicket.ngayChieu.ToString("dd/MM/yyyy");
+            ViewData["GioChieu"] = firstTicket.gioChieu.ToString(@"hh\:mm");
+            ViewData["TenPhong"] = firstTicket.tenPhong;
+            ViewData["TenGhe"] = allSeats;
+            ViewData["MaDonDatVe"] = firstTicket.maDonDatVe;
+
+            string statusClass = "status-active";
+            string statusText = "VALID";
+
+            if (query.All(q => q.trangthai == "used" || q.trangthai == "USED"))
+            {
+                statusClass = "status-used";
+                statusText = "USED";
+            }
+            else if (query.All(q => q.trangthai == "expired" || q.trangthai == "EXPIRED"))
+            {
+                statusClass = "status-expired";
+                statusText = "EXPIRED";
+            }
+
+            ViewData["StatusClass"] = statusClass;
+            ViewData["StatusText"] = statusText;
+
+            return View();
+        }
     }
 }
